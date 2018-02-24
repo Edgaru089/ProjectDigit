@@ -56,7 +56,7 @@ USING_NAMESPACE;
 
 #define PTR ::Ptr
 
-//#define USE_DEFAULT_WINMAIN_ENTRYPOINT
+#define USE_DEFAULT_WINMAIN_ENTRYPOINT
 //#define USE_DISCRETE_GPU
 
 #define OUTPUT_LOG_TO_STDOUT
@@ -64,7 +64,6 @@ USING_NAMESPACE;
 #define LOG_FILENAME "latest.log"
 
 //Marcos & Typedefs
-#define USE_ASYNC_RENDERING
 #define var auto
 #define AUTOLOCK(a) lock_guard<mutex> lock(a)
 typedef Vector2<double> Vector2d;
@@ -139,6 +138,8 @@ void waitUntilEqual(const Type1& val, const Type2 equal) {
 
 // Platform-Depedent: Windows
 #ifdef SFML_SYSTEM_WINDOWS
+
+#define USE_ASYNC_RENDERING
 
 #include <Windows.h>
 
@@ -292,25 +293,3 @@ void initalaize() {
 }
 
 
-void test() {
-	cout << "Filename: ";
-	string str;
-	getline(cin, str);
-
-	if (str == "")
-		str = "script.digit";
-
-	Script script;
-
-	ScriptParser::parseFromFile(script, str);
-
-	while (true) {
-		cout << "Function: ";
-		getline(cin, str);
-		if (str == "")
-			break;
-		cout << script.functions[str]->calculate() << endl;
-	}
-
-	system("PAUSE");
-}

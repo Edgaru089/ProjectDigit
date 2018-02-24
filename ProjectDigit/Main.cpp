@@ -1,4 +1,3 @@
-#pragma once
 
 #pragma warning(disable:4244)
 #pragma warning(disable:4018)
@@ -212,11 +211,11 @@ int main(int argc, char* argv[]) {
 			}
 		}
 #ifndef USE_ASYNC_RENDERING
-		mainScenePtr->updateLogic(win);
-		//TODO
+		app->updateLogic(win);
+		desktop->Update(desktopUpdate.restart().asSeconds());
 		win.clear();
-		App::onRender
-			sfgui.Display(win);
+		app->onRender(win);
+		sfgui.Display(win);
 		win.display();
 #endif
 

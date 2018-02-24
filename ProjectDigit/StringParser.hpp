@@ -46,7 +46,7 @@ public:
 	template<typename... Args>
 	static const string toStringFormatted(string format, Args... args) {
 		char buffer[8192];
-		sprintf_s(buffer, 8192, format.c_str(), args...);
+		sprintf(buffer, format.c_str(), args...);
 		return string(buffer);
 	}
 

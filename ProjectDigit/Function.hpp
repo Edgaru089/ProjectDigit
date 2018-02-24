@@ -12,8 +12,7 @@ public:
 
 	class ParamCountMismatchException :public exception {
 	public:
-		ParamCountMismatchException(const string functionName, const string typicalCallPattern) :
-			exception(("ParamCountMismatchException, function name: " + functionName + ", call pattern: " + typicalCallPattern).c_str(), 1) {}
+		ParamCountMismatchException(const string functionName, const string typicalCallPattern) {}
 	};
 
 	void create(const vector<shared_ptr<Function>> params) {
