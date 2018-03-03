@@ -155,8 +155,15 @@ void App::initalaize(Desktop* d) {
 	settingsWin->SetTitle(L"Settings");
 	settingsWin->GetSignal(Window::OnCloseButton).Connect([&]() {settingsWin->Show(false); });
 
+	settingNote = Notebook::Create();
+	
+	pageGraphics = Table::Create();
+	pageAdvGraphics = Table::Create();
 
+	settingNote->AppendPage(pageGraphics, Label::Create(L"Graphics"));
+	settingNote->AppendPage(pageAdvGraphics, Label::Create(L"Advanced Graphics"));
 
+	settingsWin->Add(settingNote);
 	desktop->Add(settingsWin);
 
 	//////////////////////////////

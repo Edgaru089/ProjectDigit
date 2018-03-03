@@ -196,59 +196,64 @@ private:
 		}
 
 		// Allocate the function
+		map<string, shared_ptr<Function>>::iterator iter;
 		if ((func = functionAllocatorManager.allocate(funcName)) == nullptr)
-			throw SyntaxErrorException("Function \""s + funcName + "\" not defined by script standard"s);
-
-		// Find the function paramlist
-		while (str[i] != '(')i++;
-		// Spread the function params
-		vector<shared_ptr<Function>> params;
-		vector<string> strparams;
-		while (i < str.size()) {
-
-			string param = "";
-			// Find an alphabet or number or decimal dot or minus(negative) sign
-			while (!(isalnum(str[i]) || str[i] == '.' || str[i] == '-'))i++;
-			// Read the function name
-			while (isalpha(str[i]) || isdigit(str[i]) || str[i] == '.' || str[i] == '-') {
-				param += str[i];
-				i++;
-			}
-
-			// Parse the paramlist
-			int level = 0;
+			if ((iter = script.functions.find(funcName)) == script.functions.end())
+				throw SyntaxErrorException("Function \""s + funcName + "\" not defined by script standard or prevouis script"s);
+			else
+				func = iter->second;
+		else {
+			// Find the function paramlist
+			while (str[i] != '(')i++;
+			// Spread the function params
+			vector<shared_ptr<Function>> params;
+			vector<string> strparams;
 			while (i < str.size()) {
 
-				if (level == 0 && (str[i] == ',' || str[i] == ')')) {
-					strparams.push_back(param);
-					break;
+				string param = "";
+				// Find an alphabet or number or decimal dot or minus(negative) sign
+				while (!(isalnum(str[i]) || str[i] == '.' || str[i] == '-'))i++;
+				// Read the function name
+				while (isalpha(str[i]) || isdigit(str[i]) || str[i] == '.' || str[i] == '-') {
+					param += str[i];
+					i++;
 				}
 
-				if (str[i] == '(')
-					level++;
-				if (str[i] == ')')
-					level--;
+				// Parse the paramlist
+				int level = 0;
+				while (i < str.size()) {
 
-				param += str[i];
-				i++;
+					if (level == 0 && (str[i] == ',' || str[i] == ')')) {
+						strparams.push_back(param);
+						break;
+					}
+
+					if (str[i] == '(')
+						level++;
+					if (str[i] == ')')
+						level--;
+
+					param += str[i];
+					i++;
+				}
+
+				if (str[i] == ')')
+					break;
 			}
 
-			if (str[i] == ')')
-				break;
-		}
+			stringstream ss;
+			for (string& i : strparams)
+				ss << " \"" << i << "\"";
+			//mlog << "         Function params:" << ss.str() << dlog;
 
-		stringstream ss;
-		for (string& i : strparams)
-			ss << " \"" << i << "\"";
-		//mlog << "         Function params:" << ss.str() << dlog;
+			for (string& i : strparams)
+				params.push_back(_parseFunction(i, script));
 
-		for (string& i : strparams)
-			params.push_back(_parseFunction(i, script));
-
-		try {
-			func->create(params);
-		} catch (Function::ParamCountMismatchException e) {
-			throw SyntaxErrorException("Function \""s + funcName + "\" parameter count mismatch"s);
+			try {
+				func->create(params);
+			} catch (Function::ParamCountMismatchException e) {
+				throw SyntaxErrorException("Function \""s + funcName + "\" parameter count mismatch"s);
+			}
 		}
 
 		return func;

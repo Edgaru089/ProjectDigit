@@ -155,10 +155,10 @@ int main(int argc, char* argv[]) {
 	mlog << Log::Warning << "Async Rendering/Logic Update Enabled. Unstable. Aware." << dlog << Log::Info;
 	win.setActive(false);
 	thread render(threadRendering, ref(sfgui));
-	thread logic(threadLogicUpdate, 120);
+	thread logic(threadLogicUpdate, 60);
 #endif
 
-	Time eventTickTime = seconds(1.0f / 90);
+	Time eventTickTime = seconds(1.0f / 60);
 	Clock eventCycleClock;
 	while (win.isOpen() && isReady) {
 
