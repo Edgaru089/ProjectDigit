@@ -12,20 +12,22 @@ using namespace std;
 class Log {
 public:
 
-	const string logLevelName[4] = { "INFO", "WARN", " ERR", "FATAL ERROR" };
+	const string logLevelName[5] = { "DEBUG", "INFO", "WARN", " ERR", "FATAL ERROR" };
 
 	enum LogLevel {
+		Debug,
 		Info,
 		Warning,
 		Error,
 		FatalError
 	};
 
-	Log() {}
-	Log(ostream& output) :out({ &output }) {}
-	Log(ostream* output) :out({ output }) {}
+	Log() :ignoreLevel(-1) {}
+	Log(ostream& output) :out({ &output }), ignoreLevel(-1) {}
+	Log(ostream* output) :out({ output }), ignoreLevel(-1) {}
 
 	void log(string content, LogLevel level = Info) {
+		if (Info <= ignoreLevel) return;
 		time_t curtime = time(NULL);
 		char buffer[64];
 		strftime(buffer, 63, "[%T", localtime(&curtime));
@@ -52,9 +54,13 @@ public:
 	void addOutputStream(ostream& output) { out.push_back(&output); }
 	void addOutputStream(ostream* output) { out.push_back(output); }
 
+	// Lower and equal; use -1 to ignore nothing
+	void ignore(int level) { ignoreLevel = level; }
+
 private:
 	vector<ostream*> out;
 	recursive_mutex lock;
+	int ignoreLevel;
 };
 
 Log dlog;
@@ -65,7 +71,7 @@ public:
 	LogMessage() :level(Log::Info) {}
 
 	LogMessage& operator <<(bool                data) { buffer += StringParser::toString(data); return *this; }
-	LogMessage& operator <<(char                data) { buffer += StringParser::toString(data); return *this; }
+	LogMessage& operator <<(char                data) { buffer += (data); return *this; }
 	LogMessage& operator <<(unsigned char       data) { buffer += StringParser::toString(data); return *this; }
 	LogMessage& operator <<(short               data) { buffer += StringParser::toString(data); return *this; }
 	LogMessage& operator <<(unsigned short      data) { buffer += StringParser::toString(data); return *this; }

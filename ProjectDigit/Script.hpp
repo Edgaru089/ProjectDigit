@@ -5,6 +5,7 @@
 #include <fstream>
 #include <memory>
 #include <cctype>
+#include <stack>
 
 #include "FunctionAllocator.hpp"
 #include "BasicFunctions.hpp"
@@ -18,6 +19,13 @@ class Script {
 public:
 
 	friend class ScriptParser;
+
+	enum Mode {
+		Expression,
+		FunctionStream
+	};
+
+	Script() :mode(FunctionStream) {}
 
 	class DisplayFunction {
 	public:
@@ -64,6 +72,8 @@ public:
 	set<string> usedFunctions;
 	map<string, shared_ptr<Variable>> val;
 	vector<DisplayFunction> displays;
+
+	Mode mode;
 };
 
 class ScriptParser {
@@ -111,8 +121,7 @@ public:
 			return true;
 		try {
 			if (line != -1)
-				//mlog << "[Script] Line " << line << ":" << dlog;
-				;
+				mlog << Log::Debug << "[Script] Line " << line << ":" << dlog;
 			else
 				mlog << "[Script] Parsing Immediate Window input: " << str << dlog;
 			if (str.substr(0u, 6u) == "defval") {
@@ -126,6 +135,14 @@ public:
 			}
 			else if (str.substr(0u, 5u) == "clear") {
 				script = Script();
+			}
+			else if (str.substr(0u, 4u) == "mode") {
+				int i = 4;
+				while (!isalnum(str[i]))i++;
+				if (str[i] == '0' || str.substr(i, 4u) == "func"s)
+					script.mode = Script::FunctionStream;
+				else if (str[i] == '1' || str.substr(i, 4u) == "expr"s)
+					script.mode = Script::Expression;
 			}
 		} catch (SyntaxErrorException e) {
 			mlog << Log::Error << "[Script/EXCEPTION] ERROR(" << (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
@@ -144,7 +161,7 @@ public:
 private:
 
 	static void _defval(const string& vallist, Script& script) {
-		//mlog << "[Script] Parsing variable define list: " << vallist << dlog;
+		mlog << Log::Debug << "[Script] Parsing variable define list: " << vallist << dlog;
 		int i = 0;
 		while (i < vallist.size()) {
 			string name = "";
@@ -157,7 +174,7 @@ private:
 				i++;
 			}
 			// Add the variable name
-			//mlog << "         Inserted: " << name << dlog;
+			mlog << Log::Debug << "         Inserted: " << name << dlog;
 			script.valNames.insert(name);
 			script.val.insert(pair<string, shared_ptr<Variable>>(name, make_shared<Variable>()));
 			// Look for an comma; abort if there are none
@@ -165,9 +182,47 @@ private:
 		}
 	}
 
+	static void _parseFunctionParams(const std::string& str, int& i, std::vector<std::string> &strparams) {
+		// Find the function paramlist
+		while (str[i] != '(')i++;
+		// Spread the function params
+		while (i < str.size()) {
+
+			string param = "";
+			// Find an alphabet or number or decimal dot or minus(negative) sign
+			while (!(isalnum(str[i]) || str[i] == '.' || str[i] == '-'))i++;
+			// Read the function name
+			while (isalpha(str[i]) || isdigit(str[i]) || str[i] == '.' || str[i] == '-') {
+				param += str[i];
+				i++;
+			}
+
+			// Parse the paramlist
+			int level = 0;
+			while (i < str.size()) {
+
+				if (level == 0 && (str[i] == ',' || str[i] == ')')) {
+					strparams.push_back(param);
+					break;
+				}
+
+				if (str[i] == '(')
+					level++;
+				if (str[i] == ')')
+					level--;
+
+				param += str[i];
+				i++;
+			}
+
+			if (str[i] == ')')
+				break;
+		}
+	}
+
 	static shared_ptr<Function> _parseFunction(const string& str, Script& script) {
 
-		//mlog << "[Script] Parsing function string: " << str << dlog;
+		mlog << Log::Debug << "[Script] Parsing function string: " << str << dlog;
 
 		shared_ptr<Function> func;
 		int i = 0;
@@ -181,17 +236,17 @@ private:
 			i++;
 		}
 
-		//mlog << "         Function name: " << funcName << dlog;
+		mlog << Log::Debug << "         Function name: " << funcName << dlog;
 
 		// If this is a constant value
 		if (isdigit(funcName[0]) || funcName[0] == '.' || funcName[0] == '-') {
-			//mlog << "         Constant value" << dlog;
+			mlog << Log::Debug << "         Constant value" << dlog;
 			return make_shared<Variable>(Variable(StringParser::toDouble(funcName))); // Return variable pointer 
 		}
 
 		// If this is a variable
 		if (script.valNames.find(funcName) != script.valNames.end()) {
-			//mlog << "         Variable" << dlog;
+			mlog << Log::Debug << "         Variable" << dlog;
 			return script.val[funcName]; // Return variable pointer; bye!
 		}
 
@@ -203,48 +258,10 @@ private:
 			else
 				func = iter->second;
 		else {
-			// Find the function paramlist
-			while (str[i] != '(')i++;
-			// Spread the function params
 			vector<shared_ptr<Function>> params;
 			vector<string> strparams;
-			while (i < str.size()) {
 
-				string param = "";
-				// Find an alphabet or number or decimal dot or minus(negative) sign
-				while (!(isalnum(str[i]) || str[i] == '.' || str[i] == '-'))i++;
-				// Read the function name
-				while (isalpha(str[i]) || isdigit(str[i]) || str[i] == '.' || str[i] == '-') {
-					param += str[i];
-					i++;
-				}
-
-				// Parse the paramlist
-				int level = 0;
-				while (i < str.size()) {
-
-					if (level == 0 && (str[i] == ',' || str[i] == ')')) {
-						strparams.push_back(param);
-						break;
-					}
-
-					if (str[i] == '(')
-						level++;
-					if (str[i] == ')')
-						level--;
-
-					param += str[i];
-					i++;
-				}
-
-				if (str[i] == ')')
-					break;
-			}
-
-			stringstream ss;
-			for (string& i : strparams)
-				ss << " \"" << i << "\"";
-			//mlog << "         Function params:" << ss.str() << dlog;
+			_parseFunctionParams(str, i, strparams);
 
 			for (string& i : strparams)
 				params.push_back(_parseFunction(i, script));
@@ -257,6 +274,132 @@ private:
 		}
 
 		return func;
+	}
+
+	// Parse function in Expression Mode
+	static shared_ptr<Function> _parseFunctionExpr(const string& str, Script& script) {
+		mlog << "[Script/EXPR] Parsing Expression: " << str << dlog;
+
+		stack<char> adds, muls;
+		stack<shared_ptr<Function>> vals;
+
+		auto calcMultplyStack = [&]() {
+			while (!muls.empty()) {
+				char c = muls.top();
+				shared_ptr<Function> result;
+				muls.pop();
+				shared_ptr<Function> val1, val2;
+				val2 = vals.top(); vals.pop();
+				val1 = vals.top(); vals.pop();
+				if (c == '*') // Multply
+					result = functionAllocatorManager.allocate("multply"s);
+				else if (c == '/') // Divide
+					result = functionAllocatorManager.allocate("divide"s);
+				result->create({ val1,val2 });
+				vals.push(result);
+			}
+			mlog << Log::Debug << "              Multply Stack Cleared" << dlog;
+		};
+		auto calcAddStack = [&]() {
+			while (!adds.empty()) {
+				char c = adds.top();
+				shared_ptr<Function> result;
+				adds.pop();
+				shared_ptr<Function> val1, val2;
+				val2 = vals.top(); vals.pop();
+				val1 = vals.top(); vals.pop();
+				if (c == '+') // Add
+					result = functionAllocatorManager.allocate("add"s);
+				else if (c == '-') // Minus
+					result = functionAllocatorManager.allocate("minus"s);
+				result->create({ val1,val2 });
+				vals.push(result);
+			}
+			mlog << Log::Debug << "              Addition Stack Cleared" << dlog;
+		};
+
+		int i = 0;
+		while (i < str.size()) {
+
+			string funcName = ""s;
+			// Find function / number
+			while (!(isalnum(str[i]) || str[i] == '.' || str[i] == '-'))i++;
+			// Read function / number
+			while (isalnum(str[i]) || str[i] == '.' || str[i] == '-') {
+				funcName += str[i];
+				i++;
+			}
+			mlog << Log::Debug << "              Read function name: " << funcName << dlog;
+			// If number -> new variable
+			if (isdigit(funcName[0]) || funcName[0] == '.' || funcName[0] == '-') {
+				mlog << Log::Debug << "              Constant" << dlog;
+				vals.push(make_shared<Variable>(Variable(StringParser::toDouble(funcName)))); // Return variable pointer 
+			} // Else -> function / variable
+			else {
+				// If this is a variable
+				if (script.valNames.find(funcName) != script.valNames.end()) {
+					mlog << Log::Debug << "              Variable" << dlog;
+					vals.push(script.val[funcName]); // Return variable pointer; bye!
+				}
+				else {
+					mlog << Log::Debug << "              Function" << dlog;
+					// Allocate the function
+					shared_ptr<Function> func;
+					map<string, shared_ptr<Function>>::iterator iter;
+					if ((func = functionAllocatorManager.allocate(funcName)) == nullptr)
+						if ((iter = script.functions.find(funcName)) == script.functions.end())
+							throw SyntaxErrorException("Function \""s + funcName + "\" not defined by script standard or prevouis script"s);
+						else
+							func = iter->second;
+					else {
+						vector<shared_ptr<Function>> params;
+						vector<string> strparams;
+
+						_parseFunctionParams(str, i, strparams);
+
+						stringstream ss;
+						for (string& i : strparams)
+							ss << " \"" << i << "\"";
+						mlog << Log::Debug << "              Params:" << ss.str() << dlog;
+
+						for (string& i : strparams)
+							params.push_back(_parseFunctionExpr(i, script));
+
+						try {
+							func->create(params);
+						} catch (Function::ParamCountMismatchException e) {
+							throw SyntaxErrorException("Function \""s + funcName + "\" parameter count mismatch"s);
+						}
+					}
+					vals.push(func);
+				}
+
+			}
+
+			//Find operator (+, -, *, /)
+			while (i < str.length() && str[i] != '+'&&str[i] != '-'&&str[i] != '*'&&str[i] != '/')i++;
+
+			// If out of range -> finished; break
+			if (i >= str.length())
+				break;
+
+			char op = str[i]; i++; // Get operator
+			mlog << Log::Debug << "              Get operator: " << op << dlog;
+
+			if (op == '+' || op == '-') { // Add operation
+				calcMultplyStack();
+				adds.push(op);
+			}
+			else if (op == '*' || op == '/') // Multply operation
+				muls.push(op);
+
+		}
+
+		// It is possible that a multply stream is pending; clear both stacks
+		calcMultplyStack();
+		calcAddStack();
+
+		return vals.top();
 	}
 
 	static void _deffunc(const string& str, Script& script) {
@@ -272,7 +415,7 @@ private:
 			i++;
 		}
 
-		//mlog << "[Script] Parsing function: " << functionName << dlog;
+		mlog << Log::Debug << "[Script] Parsing function: " << functionName << dlog;
 
 		// If prevouisly defined -> syntax error
 		if (script.functions.find(functionName) != script.functions.end())
@@ -280,16 +423,19 @@ private:
 
 		// Find the equal sign
 		while (str[i] != '=')i++;
-		// Look for the next alphabet
-		while (!isalpha(str[i]))i++;
+		// Look for the function expression
+		while (!(isalnum(str[i]) || str[i] == '.' || str[i] == '-'))i++;
 
-		func = _parseFunction(str.substr(i), script);
+		if (script.mode == Script::FunctionStream)
+			func = _parseFunction(str.substr(i), script);
+		else if (script.mode == Script::Expression)
+			func = _parseFunctionExpr(str.substr(i), script);
 		script.functions.insert(pair<string, shared_ptr<Function>>(functionName, func));
 
 	}
 
 	static void _displayfunc(const string& str, Script& script) {
-		//mlog << "[Script] Parsing function display sentence: " << str << dlog;
+		mlog << Log::Debug << "[Script] Parsing function display sentence: " << str << dlog;
 
 		Script::DisplayFunction func;
 		string funcName;
@@ -305,7 +451,7 @@ private:
 			funcName += str[i];
 			i++;
 		}
-		//mlog << "         Function name:" << funcName << dlog;
+		mlog << Log::Debug << "         Function name:" << funcName << dlog;
 
 		if (script.functions.find(funcName) == script.functions.end())
 			throw SyntaxErrorException("Function \""s + funcName + "\" undefined"s);
@@ -313,7 +459,6 @@ private:
 		// One function can only be used once
 		if (script.usedFunctions.find(funcName) != script.usedFunctions.end())
 			throw SyntaxErrorException("Function \""s + funcName + "\" used more than once"s);
-		//mlog << Log::Warning << "         Multiple use of the function" << dlog;
 		else
 			script.usedFunctions.insert(funcName);
 
@@ -343,7 +488,7 @@ private:
 				i++;
 			}
 
-			//mlog << "         Function variable:" << valn << " = " << word << dlog;
+			mlog << Log::Debug << "         Function variable:" << valn << " = " << word << dlog;
 
 			map<string, shared_ptr<Variable>>::iterator iter = script.val.find(valn);
 			if (iter == script.val.end())
