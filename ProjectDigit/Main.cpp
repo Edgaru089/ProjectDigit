@@ -57,7 +57,6 @@ void threadLogicUpdate(int ticksPerSecond) {
 	while (isReady && win.isOpen()) {
 		logicDataLock.lock();
 
-		desktop->Update(desktopUpdate.restart().asSeconds());
 		app->updateLogic(win);
 
 		logicDataLock.unlock();
@@ -122,9 +121,23 @@ int main(int argc, char* argv[]) {
 
 	//system("PAUSE>nul");
 
-	initalaize();
+	cout << "Pre-Initalaizing..." << flush;
+
+#ifdef OUTPUT_LOG_TO_STDOUT
+	dlog.addOutputStream(clog);
+#endif
+#ifdef OUTPUT_LOG_TO_FILE
+	dlog.addOutputStream(logout);
+#endif
+	dlog.ignore(LOG_IGNORE_LEVEL);
+
+	cout << "Done." << endl;
 
 	mlog << Log::Info << "Initalaizing..." << dlog;
+
+	// Initalaize function allocators
+	functionAllocatorManager.addAllocator(new ArithmeticFunctionAllocator());
+	functionAllocatorManager.addAllocator(new AdvMathsFunctionAllocator());
 
 	srand(time(NULL));
 	bool isFullscreen = false;
@@ -168,6 +181,7 @@ int main(int argc, char* argv[]) {
 			logicDataLock.lock();
 			desktop->HandleEvent(event);
 			app->handleEvent(win, event);
+			desktop->Update(desktopUpdate.restart().asSeconds());
 			logicDataLock.unlock();
 
 			if (event.type == Event::Closed) {

@@ -62,6 +62,7 @@ USING_NAMESPACE;
 #define OUTPUT_LOG_TO_STDOUT
 #define OUTPUT_LOG_TO_FILE
 #define LOG_FILENAME "latest.log"
+#define LOG_IGNORE_LEVEL Log::Debug
 
 //Marcos & Typedefs
 #define var auto
@@ -274,22 +275,3 @@ void sfMessageBox(Desktop& desktop, String content, String title = L"Infomation"
 
 
 App* app;
-
-void initalaize() {
-#ifdef OUTPUT_LOG_TO_STDOUT
-	dlog.addOutputStream(clog);
-#endif
-#ifdef OUTPUT_LOG_TO_FILE
-	dlog.addOutputStream(logout);
-#endif
-
-	mlog << Log::Info << "[Main/INIT] Initalaizing..." << dlog;
-
-	// Initalaize function allocators
-	functionAllocatorManager.addAllocator(new ArithmeticFunctionAllocator());
-	functionAllocatorManager.addAllocator(new AdvMathsFunctionAllocator());
-
-	mlog << Log::Info << "[Main/INIT] Initalaization Complete." << dlog;
-}
-
-

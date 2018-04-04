@@ -27,7 +27,7 @@ public:
 	Log(ostream* output) :out({ output }), ignoreLevel(-1) {}
 
 	void log(string content, LogLevel level = Info) {
-		if (Info <= ignoreLevel) return;
+		if (level <= ignoreLevel) return;
 		time_t curtime = time(NULL);
 		char buffer[64];
 		strftime(buffer, 63, "[%T", localtime(&curtime));
