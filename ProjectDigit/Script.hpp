@@ -121,7 +121,7 @@ public:
 			return true;
 		try {
 			if (line != -1)
-				mlog << Log::Debug << "[Script] Line " << line << ":" << dlog;
+				mlogd << "[Script] Line " << line << ":" << dlog;
 			else
 				mlog << "[Script] Parsing Immediate Window input: " << str << dlog;
 			if (str.substr(0u, 6u) == "defval") {
@@ -161,7 +161,7 @@ public:
 private:
 
 	static void _defval(const string& vallist, Script& script) {
-		mlog << Log::Debug << "[Script] Parsing variable define list: " << vallist << dlog;
+		mlogd << "[Script] Parsing variable define list: " << vallist << dlog;
 		int i = 0;
 		while (i < vallist.size()) {
 			string name = "";
@@ -174,7 +174,7 @@ private:
 				i++;
 			}
 			// Add the variable name
-			mlog << Log::Debug << "         Inserted: " << name << dlog;
+			mlogd << "         Inserted: " << name << dlog;
 			script.valNames.insert(name);
 			script.val.insert(pair<string, shared_ptr<Variable>>(name, make_shared<Variable>()));
 			// Look for an comma; abort if there are none
@@ -220,9 +220,10 @@ private:
 		}
 	}
 
+	// Parse function in Function(Legacy) mode
 	static shared_ptr<Function> _parseFunction(const string& str, Script& script) {
 
-		mlog << Log::Debug << "[Script] Parsing function string: " << str << dlog;
+		mlogd << "[Script] Parsing function string: " << str << dlog;
 
 		shared_ptr<Function> func;
 		int i = 0;
@@ -236,17 +237,17 @@ private:
 			i++;
 		}
 
-		mlog << Log::Debug << "         Function name: " << funcName << dlog;
+		mlogd << "         Function name: " << funcName << dlog;
 
 		// If this is a constant value
 		if (isdigit(funcName[0]) || funcName[0] == '.' || funcName[0] == '-') {
-			mlog << Log::Debug << "         Constant value" << dlog;
+			mlogd << "         Constant value" << dlog;
 			return make_shared<Variable>(Variable(StringParser::toDouble(funcName))); // Return variable pointer 
 		}
 
 		// If this is a variable
 		if (script.valNames.find(funcName) != script.valNames.end()) {
-			mlog << Log::Debug << "         Variable" << dlog;
+			mlogd << "         Variable" << dlog;
 			return script.val[funcName]; // Return variable pointer; bye!
 		}
 
@@ -285,9 +286,8 @@ private:
 
 		auto calcMultplyStack = [&]() {
 			while (!muls.empty()) {
-				char c = muls.top();
+				char c = muls.top(); muls.pop();
 				shared_ptr<Function> result;
-				muls.pop();
 				shared_ptr<Function> val1, val2;
 				val2 = vals.top(); vals.pop();
 				val1 = vals.top(); vals.pop();
@@ -298,7 +298,7 @@ private:
 				result->create({ val1,val2 });
 				vals.push(result);
 			}
-			mlog << Log::Debug << "              Multply Stack Cleared" << dlog;
+			mlogd << "              Multply Stack Cleared" << dlog;
 		};
 		auto calcAddStack = [&]() {
 			while (!adds.empty()) {
@@ -315,65 +315,84 @@ private:
 				result->create({ val1,val2 });
 				vals.push(result);
 			}
-			mlog << Log::Debug << "              Addition Stack Cleared" << dlog;
+			mlogd << "              Addition Stack Cleared" << dlog;
 		};
 
 		int i = 0;
 		while (i < str.size()) {
 
 			string funcName = ""s;
-			// Find function / number
-			while (!(isalnum(str[i]) || str[i] == '.' || str[i] == '-'))i++;
-			// Read function / number
-			while (isalnum(str[i]) || str[i] == '.' || str[i] == '-') {
-				funcName += str[i];
+			// Find function / number / opening bracket
+			while (!(isalnum(str[i]) || str[i] == '.' || str[i] == '-' || str[i] == '('))i++;
+			// If opening bracket -> read expression string and parse seperatly
+			if (str[i] == '(') {
 				i++;
+				int level = 1;
+				string subfunc;
+				while (i < str.length()) {
+					if (str[i] == '(')
+						level++;
+					if (str[i] == ')')
+						level--;
+					if (level == 0)
+						break;
+					subfunc += str[i];
+					i++;
+				}
+				mlogd << "              Read quoted contents: " << subfunc << dlog;
+				vals.push(_parseFunctionExpr(subfunc, script));
 			}
-			mlog << Log::Debug << "              Read function name: " << funcName << dlog;
-			// If number -> new variable
-			if (isdigit(funcName[0]) || funcName[0] == '.' || funcName[0] == '-') {
-				mlog << Log::Debug << "              Constant" << dlog;
-				vals.push(make_shared<Variable>(Variable(StringParser::toDouble(funcName)))); // Return variable pointer 
-			} // Else -> function / variable
 			else {
-				// If this is a variable
-				if (script.valNames.find(funcName) != script.valNames.end()) {
-					mlog << Log::Debug << "              Variable" << dlog;
-					vals.push(script.val[funcName]); // Return variable pointer; bye!
+				// Read function / number
+				while (isalnum(str[i]) || str[i] == '.' || str[i] == '-') {
+					funcName += str[i];
+					i++;
 				}
+				mlogd << "              Read function name: " << funcName << dlog;
+				// If number -> new variable
+				if (isdigit(funcName[0]) || funcName[0] == '.' || funcName[0] == '-') {
+					mlogd << "              Constant" << dlog;
+					vals.push(make_shared<Variable>(Variable(StringParser::toDouble(funcName)))); // Push variable pointer 
+				} // Else -> function / variable
 				else {
-					mlog << Log::Debug << "              Function" << dlog;
-					// Allocate the function
-					shared_ptr<Function> func;
-					map<string, shared_ptr<Function>>::iterator iter;
-					if ((func = functionAllocatorManager.allocate(funcName)) == nullptr)
-						if ((iter = script.functions.find(funcName)) == script.functions.end())
-							throw SyntaxErrorException("Function \""s + funcName + "\" not defined by script standard or prevouis script"s);
-						else
-							func = iter->second;
-					else {
-						vector<shared_ptr<Function>> params;
-						vector<string> strparams;
-
-						_parseFunctionParams(str, i, strparams);
-
-						stringstream ss;
-						for (string& i : strparams)
-							ss << " \"" << i << "\"";
-						mlog << Log::Debug << "              Params:" << ss.str() << dlog;
-
-						for (string& i : strparams)
-							params.push_back(_parseFunctionExpr(i, script));
-
-						try {
-							func->create(params);
-						} catch (Function::ParamCountMismatchException e) {
-							throw SyntaxErrorException("Function \""s + funcName + "\" parameter count mismatch"s);
-						}
+					// If this is a variable
+					if (script.valNames.find(funcName) != script.valNames.end()) {
+						mlogd << "              Variable" << dlog;
+						vals.push(script.val[funcName]); // Push variable pointer; bye!
 					}
-					vals.push(func);
-				}
+					else {
+						mlogd << "              Function" << dlog;
+						// Allocate the function
+						shared_ptr<Function> func;
+						map<string, shared_ptr<Function>>::iterator iter;
+						if ((func = functionAllocatorManager.allocate(funcName)) == nullptr)
+							if ((iter = script.functions.find(funcName)) == script.functions.end())
+								throw SyntaxErrorException("Function \""s + funcName + "\" not defined by script standard or prevouis script"s);
+							else
+								func = iter->second;
+						else {
+							vector<shared_ptr<Function>> params;
+							vector<string> strparams;
 
+							_parseFunctionParams(str, i, strparams);
+
+							stringstream ss;
+							for (string& i : strparams)
+								ss << " \"" << i << "\"";
+							mlogd << "              Params:" << ss.str() << dlog;
+
+							for (string& i : strparams)
+								params.push_back(_parseFunctionExpr(i, script));
+
+							try {
+								func->create(params);
+							} catch (Function::ParamCountMismatchException e) {
+								throw SyntaxErrorException("Function \""s + funcName + "\" parameter count mismatch"s);
+							}
+						}
+						vals.push(func);
+					}
+				}
 			}
 
 			//Find operator (+, -, *, /)
@@ -384,7 +403,7 @@ private:
 				break;
 
 			char op = str[i]; i++; // Get operator
-			mlog << Log::Debug << "              Get operator: " << op << dlog;
+			mlogd << "              Get operator: " << op << dlog;
 
 			if (op == '+' || op == '-') { // Add operation
 				calcMultplyStack();
@@ -415,7 +434,7 @@ private:
 			i++;
 		}
 
-		mlog << Log::Debug << "[Script] Parsing function: " << functionName << dlog;
+		mlogd << "[Script] Parsing function: " << functionName << dlog;
 
 		// If prevouisly defined -> syntax error
 		if (script.functions.find(functionName) != script.functions.end())
@@ -435,7 +454,7 @@ private:
 	}
 
 	static void _displayfunc(const string& str, Script& script) {
-		mlog << Log::Debug << "[Script] Parsing function display sentence: " << str << dlog;
+		mlogd << "[Script] Parsing function display sentence: " << str << dlog;
 
 		Script::DisplayFunction func;
 		string funcName;
@@ -451,7 +470,7 @@ private:
 			funcName += str[i];
 			i++;
 		}
-		mlog << Log::Debug << "         Function name:" << funcName << dlog;
+		mlogd << "         Function name:" << funcName << dlog;
 
 		if (script.functions.find(funcName) == script.functions.end())
 			throw SyntaxErrorException("Function \""s + funcName + "\" undefined"s);
@@ -488,7 +507,7 @@ private:
 				i++;
 			}
 
-			mlog << Log::Debug << "         Function variable:" << valn << " = " << word << dlog;
+			mlogd << "         Function variable:" << valn << " = " << word << dlog;
 
 			map<string, shared_ptr<Variable>>::iterator iter = script.val.find(valn);
 			if (iter == script.val.end())

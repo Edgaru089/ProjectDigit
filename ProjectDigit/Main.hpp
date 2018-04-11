@@ -62,7 +62,7 @@ USING_NAMESPACE;
 #define OUTPUT_LOG_TO_STDOUT
 #define OUTPUT_LOG_TO_FILE
 #define LOG_FILENAME "latest.log"
-#define LOG_IGNORE_LEVEL Log::Debug
+#define LOG_IGNORE_LEVEL -1
 
 //Marcos & Typedefs
 #define var auto

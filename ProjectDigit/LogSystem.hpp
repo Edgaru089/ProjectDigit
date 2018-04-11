@@ -12,7 +12,7 @@ using namespace std;
 class Log {
 public:
 
-	const string logLevelName[5] = { "DEBUG", "INFO", "WARN", " ERR", "FATAL ERROR" };
+	const string logLevelName[5] = { "DEBUG", " INFO", " WARN", "ERROR", "FATAL ERROR" };
 
 	enum LogLevel {
 		Debug,
@@ -69,6 +69,7 @@ class LogMessage {
 public:
 
 	LogMessage() :level(Log::Info) {}
+	LogMessage(Log::LogLevel level) :level(level) {}
 
 	LogMessage& operator <<(bool                data) { buffer += StringParser::toString(data); return *this; }
 	LogMessage& operator <<(char                data) { buffer += (data); return *this; }
@@ -100,3 +101,4 @@ private:
 };
 
 #define mlog LogMessage()
+#define mlogd LogMessage(Log::Debug)
