@@ -8,7 +8,7 @@
 #include <stack>
 
 #include "FunctionAllocator.hpp"
-#include "BasicFunctions.hpp"
+#include "Variable.hpp"
 #include "LogSystem.hpp"
 
 #include "Main.hpp"

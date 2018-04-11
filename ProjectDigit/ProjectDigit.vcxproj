@@ -139,7 +139,7 @@
   <ItemGroup>
     <ClInclude Include="AdvancedMathsFunctions.hpp" />
     <ClInclude Include="App.hpp" />
-    <ClInclude Include="BasicFunctions.hpp" />
+    <ClInclude Include="Variable.hpp" />
     <ClInclude Include="CoordSystem.hpp" />
     <ClInclude Include="FunctionRenderer.hpp" />
     <ClInclude Include="Function.hpp" />

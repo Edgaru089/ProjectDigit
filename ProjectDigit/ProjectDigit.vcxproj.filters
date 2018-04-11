@@ -38,9 +38,6 @@
     <ClInclude Include="ArithmeticFunctions.hpp">
       <Filter>头文件\Functions</Filter>
     </ClInclude>
-    <ClInclude Include="BasicFunctions.hpp">
-      <Filter>头文件\Functions</Filter>
-    </ClInclude>
     <ClInclude Include="Main.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -70,6 +67,9 @@
     </ClInclude>
     <ClInclude Include="OptionFile.hpp">
       <Filter>头文件\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Variable.hpp">
+      <Filter>头文件\Functions</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

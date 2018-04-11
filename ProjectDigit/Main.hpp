@@ -267,7 +267,7 @@ void sfMessageBox(Desktop& desktop, String content, String title = L"Infomation"
 
 #include "FunctionAllocator.hpp"
 
-#include "BasicFunctions.hpp"
+#include "Variable.hpp"
 #include "ArithmeticFunctions.hpp"
 #include "AdvancedMathsFunctions.hpp"
 #include "Script.hpp"
