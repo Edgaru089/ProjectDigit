@@ -143,7 +143,10 @@ int main(int argc, char* argv[]) {
 	bool isFullscreen = false;
 
 	SFGUI sfgui;
-	sfgui.AddCharacterSet(2588, 2588);
+	//sfgui.AddCharacterSet(0x4E00, 0x9FA6);
+	//sf::Font fon;
+	//fon.loadFromFile("C:\\Windows\\Fonts\\msyh.ttc");
+	//Context::Get().GetEngine().GetResourceManager().SetDefaultFont(make_shared<sf::Font>(fon));
 
 	desktop = new Desktop();
 
@@ -245,7 +248,7 @@ int main(int argc, char* argv[]) {
 			sleep(eventTickTime - t);
 		eventCycleClock.restart();
 
-	}
+					}
 	win.close();
 	mlog << "Shutdown In Progress..." << dlog;
 #ifdef USE_ASYNC_RENDERING
@@ -261,4 +264,4 @@ int main(int argc, char* argv[]) {
 	isProgramRunning = false;
 
 	return EXIT_SUCCESS;
-}
+			}

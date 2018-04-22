@@ -190,6 +190,17 @@ void App::initalaize(Desktop* d) {
 		for (int i = 0; i < script.displays.size(); i++) {
 			renderer[i].create(script.displays[i], script.displays[i].name);
 		}
+
+		funcCombo->Clear();
+		for (FunctionRenderer& i : renderer)
+			funcCombo->AppendItem(i.getName());
+		funcBox->RemoveAll();
+		if (funcCombo->GetSelectedItem() != ComboBox::NONE)
+			funcBox->Pack(constructFunctionGUI(funcCombo->GetSelectedText()));
+		FloatRect allocation = functionWin->GetAllocation();
+		Vector2f requisition = functionWin->GetRequisition();
+		functionWin->SetAllocation(FloatRect(allocation.left, allocation.top, requisition.x, requisition.y));
+
 		//functionFrame->RemoveAll();
 		//functionFrame->Add(initFunctionList());
 		//mainWin->SetAllocation(FloatRect(mainWin->GetAllocation().left, mainWin->GetAllocation().top,
@@ -211,11 +222,14 @@ void App::initalaize(Desktop* d) {
 
 	funcCombo = ComboBox::Create();
 	funcBox = Box::Create(Box::Orientation::VERTICAL);
-	funcCombo->GetSignal(ComboBox::OnSelect).Connect(bind([this](Box::Ptr box, ComboBox::Ptr funcCombo) {
-		box->RemoveAll();
+	funcCombo->GetSignal(ComboBox::OnSelect).Connect([this]() {
+		funcBox->RemoveAll();
 		if (funcCombo->GetSelectedItem() != ComboBox::NONE)
-			box->Pack(constructFunctionGUI(funcCombo->GetSelectedText()));
-	}, funcBox, funcCombo));
+			funcBox->Pack(constructFunctionGUI(funcCombo->GetSelectedText()));
+		FloatRect allocation = functionWin->GetAllocation();
+		Vector2f requisition = functionWin->GetRequisition();
+		functionWin->SetAllocation(FloatRect(allocation.left, allocation.top, requisition.x, requisition.y));
+	});
 
 	box = Box::Create(Box::Orientation::VERTICAL, 3.0f);
 	box->Pack(funcCombo);
@@ -258,8 +272,8 @@ shared_ptr<Widget> App::constructFunctionGUI(string name) {
 			fr->forceUpdate();
 		}, i.first));
 
-		valTable->Attach(Label::Create(i.first), UintRect(0, j, 1, 1), Table::FILL, Table::FILL);
-		valTable->Attach(spin, UintRect(1, j, 1, 1), Table::FILL | Table::EXPAND, Table::FILL);
+		valTable->Attach(Label::Create(i.first), UintRect(0, j, 1, 1), Table::FILL, Table::FILL | Table::EXPAND);
+		valTable->Attach(spin, UintRect(1, j, 1, 1), Table::FILL | Table::EXPAND, Table::FILL | Table::EXPAND);
 
 		j++;
 	}
@@ -334,7 +348,6 @@ void App::loadScriptFile(string filename) {
 	ScriptParser::parseFromFile(s, filename);
 
 	logicDataLock.lock();
-	funcCombo->Clear();
 
 	script = s;
 	renderer.resize(script.displays.size());
@@ -346,8 +359,13 @@ void App::loadScriptFile(string filename) {
 	//mainWin->SetAllocation(FloatRect(mainWin->GetAllocation().left, mainWin->GetAllocation().top,
 	//	mainWin->GetRequisition().x, mainWin->GetRequisition().y));
 
+	funcCombo->Clear();
 	for (FunctionRenderer& i : renderer)
 		funcCombo->AppendItem(i.getName());
+	funcBox->RemoveAll();
+	FloatRect allocation = functionWin->GetAllocation();
+	Vector2f requisition = functionWin->GetRequisition();
+	functionWin->SetAllocation(FloatRect(allocation.left, allocation.top, requisition.x, requisition.y));
 
 	logicDataLock.unlock();
 }
