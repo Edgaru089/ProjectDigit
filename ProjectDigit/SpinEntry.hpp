@@ -5,6 +5,8 @@
 #include <SFML/Graphics.hpp>
 #include <memory>
 
+#include "LogSystem.hpp"
+
 using namespace sfg;
 using namespace std;
 
@@ -84,9 +86,23 @@ private:
 
 	bool m_pressed;
 
+	std::shared_ptr<Adjustment> m_adjustment;
+
+	float m_elapsed_time;
+
+	unsigned int m_adjustment_signal_serial;
+	unsigned int m_digits;
+
+	bool m_decrease_pressed;
+	bool m_increase_pressed;
+
+	bool m_repeat_wait;
+
 protected:
 
 	unique_ptr<RenderQueue> InvalidateImpl() const override {
+		mlogd << "A SpinEntry was invalidated!" << dlog;
+
 		auto border_color = Context::Get().GetEngine().GetProperty<sf::Color>("BorderColor", shared_from_this());
 		auto background_color = Context::Get().GetEngine().GetProperty<sf::Color>("BackgroundColor", shared_from_this());
 		auto text_color = Context::Get().GetEngine().GetProperty<sf::Color>("Color", shared_from_this());
@@ -134,9 +150,9 @@ protected:
 		// Up Stepper Triangle.
 		queue->Add(
 			Renderer::Get().CreateTriangle(
-				sf::Vector2f(this->GetAllocation().width - button_width / 2.f - border_width, (this->IsIncreaseStepperPressed() ? 1.f : 0.f) + border_width + this->GetAllocation().height / 6.f),
-				sf::Vector2f(this->GetAllocation().width - button_width / 4.f * 3.f - border_width, (this->IsIncreaseStepperPressed() ? 1.f : 0.f) + border_width + this->GetAllocation().height / 3.f),
-				sf::Vector2f(this->GetAllocation().width - button_width / 4.f - border_width, (this->IsIncreaseStepperPressed() ? 1.f : 0.f) + border_width + this->GetAllocation().height / 3.f),
+				sf::Vector2f(this->GetAllocation().width - button_width / 2.f - border_width, (this->IsStepperPressed() ? 1.f : 0.f) + border_width + this->GetAllocation().height / 6.f),
+				sf::Vector2f(this->GetAllocation().width - button_width / 4.f * 3.f - border_width, (this->IsStepperPressed() ? 1.f : 0.f) + border_width + this->GetAllocation().height / 3.f),
+				sf::Vector2f(this->GetAllocation().width - button_width / 4.f - border_width, (this->IsStepperPressed() ? 1.f : 0.f) + border_width + this->GetAllocation().height / 3.f),
 				stepper_arrow_color
 			)
 		);
@@ -144,9 +160,9 @@ protected:
 		// Down Stepper Triangle.
 		queue->Add(
 			Renderer::Get().CreateTriangle(
-				sf::Vector2f(this->GetAllocation().width - button_width / 2.f - border_width, (this->IsDecreaseStepperPressed() ? 1.f : 0.f) + this->GetAllocation().height - border_width - this->GetAllocation().height / 6.f),
-				sf::Vector2f(this->GetAllocation().width - button_width / 4.f - border_width, (this->IsDecreaseStepperPressed() ? 1.f : 0.f) + this->GetAllocation().height - border_width - this->GetAllocation().height / 3.f),
-				sf::Vector2f(this->GetAllocation().width - button_width / 4.f * 3.f - border_width, (this->IsDecreaseStepperPressed() ? 1.f : 0.f) + this->GetAllocation().height - border_width - this->GetAllocation().height / 3.f),
+				sf::Vector2f(this->GetAllocation().width - button_width / 2.f - border_width, (this->IsStepperPressed() ? 1.f : 0.f) + this->GetAllocation().height - border_width - this->GetAllocation().height / 6.f),
+				sf::Vector2f(this->GetAllocation().width - button_width / 4.f - border_width, (this->IsStepperPressed() ? 1.f : 0.f) + this->GetAllocation().height - border_width - this->GetAllocation().height / 3.f),
+				sf::Vector2f(this->GetAllocation().width - button_width / 4.f * 3.f - border_width, (this->IsStepperPressed() ? 1.f : 0.f) + this->GetAllocation().height - border_width - this->GetAllocation().height / 3.f),
 				stepper_arrow_color
 			)
 		);

@@ -74,5 +74,8 @@
     <ClInclude Include="Variable.hpp">
       <Filter>头文件\Functions</Filter>
     </ClInclude>
+    <ClInclude Include="SpinEntry.hpp">
+      <Filter>头文件\GUI</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

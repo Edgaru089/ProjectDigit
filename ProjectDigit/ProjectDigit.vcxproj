@@ -139,6 +139,7 @@
   <ItemGroup>
     <ClInclude Include="AdvancedMathsFunctions.hpp" />
     <ClInclude Include="App.hpp" />
+    <ClInclude Include="SpinEntry.hpp" />
     <ClInclude Include="Variable.hpp" />
     <ClInclude Include="CoordSystem.hpp" />
     <ClInclude Include="FunctionRenderer.hpp" />
