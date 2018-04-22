@@ -95,6 +95,8 @@ public:
 		fin.open(filename);
 		if (!fin.good()) {
 			mlog << "         File access failed." << dlog;
+			if (desktop != NULL)
+				sfMessageBox(*desktop, "[Script/EXCEPTION] ERROR: File \"" + filename + "\" access failed.", L"Error");
 			return false;
 		}
 
@@ -150,6 +152,16 @@ public:
 			)) << "): " << e.what() << dlog;
 			if (desktop != NULL)
 				sfMessageBox(*desktop, "[Script/EXCEPTION] ERROR("s + (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
+					"Line %d"s, line
+				)) + "): "s + e.what(), L"Error");
+			script = _script;
+			return false;
+		} catch (exception e) {
+			mlog << Log::Error << "[Script/EXCEPTION] UNKNOWN EXCEPTION(" << (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
+				"Line %d", line
+			)) << "): " << e.what() << dlog;
+			if (desktop != NULL)
+				sfMessageBox(*desktop, "[Script/EXCEPTION] UNKNOWN EXCEPTION("s + (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
 					"Line %d"s, line
 				)) + "): "s + e.what(), L"Error");
 			script = _script;
@@ -285,36 +297,55 @@ private:
 		stack<shared_ptr<Function>> vals;
 
 		auto calcMultplyStack = [&]() {
+			stack<char> mul0;
+			stack<shared_ptr<Function>> val0;
+
+			val0.push(vals.top()); vals.pop();
 			while (!muls.empty()) {
-				char c = muls.top(); muls.pop();
+				mul0.push(muls.top()); muls.pop();
+				val0.push(vals.top()); vals.pop();
+			}
+
+			while (!mul0.empty()) {
+				char c = mul0.top(); mul0.pop();
 				shared_ptr<Function> result;
 				shared_ptr<Function> val1, val2;
-				val2 = vals.top(); vals.pop();
-				val1 = vals.top(); vals.pop();
+				val1 = val0.top(); val0.pop();
+				val2 = val0.top(); val0.pop();
 				if (c == '*') // Multply
 					result = functionAllocatorManager.allocate("multply"s);
 				else if (c == '/') // Divide
 					result = functionAllocatorManager.allocate("divide"s);
 				result->create({ val1,val2 });
-				vals.push(result);
+				val0.push(result);
 			}
+			vals.push(val0.top());
 			mlogd << "              Multply Stack Cleared" << dlog;
 		};
 		auto calcAddStack = [&]() {
+			stack<char> add0;
+			stack<shared_ptr<Function>> val0;
+
+			val0.push(vals.top()); vals.pop();
 			while (!adds.empty()) {
-				char c = adds.top();
+				add0.push(adds.top()); adds.pop();
+				val0.push(vals.top()); vals.pop();
+			}
+
+			while (!add0.empty()) {
+				char c = add0.top(); add0.pop();
 				shared_ptr<Function> result;
-				adds.pop();
 				shared_ptr<Function> val1, val2;
-				val2 = vals.top(); vals.pop();
-				val1 = vals.top(); vals.pop();
+				val1 = val0.top(); val0.pop();
+				val2 = val0.top(); val0.pop();
 				if (c == '+') // Add
 					result = functionAllocatorManager.allocate("add"s);
 				else if (c == '-') // Minus
 					result = functionAllocatorManager.allocate("minus"s);
 				result->create({ val1,val2 });
-				vals.push(result);
+				val0.push(result);
 			}
+			vals.push(val0.top());
 			mlogd << "              Addition Stack Cleared" << dlog;
 		};
 
@@ -344,7 +375,7 @@ private:
 			}
 			else {
 				// Read function / number
-				while (isalnum(str[i]) || str[i] == '.' || str[i] == '-') {
+				while (isalnum(str[i]) || str[i] == '.' || (str[i] == '-' && funcName == "")) {
 					funcName += str[i];
 					i++;
 				}

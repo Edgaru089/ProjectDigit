@@ -76,8 +76,9 @@ void threadLogicUpdate(int ticksPerSecond) {
 
 void initRenderWindow(Uint32 style = sf::Style::Default, bool useVSync = true, int framePerSecond = 120) {
 	sf::ContextSettings settings;
+	VideoMode desk = VideoMode::getDesktopMode();
 	settings.antialiasingLevel = 0;
-	win.create(style == sf::Style::Fullscreen ? VideoMode::getDesktopMode() : VideoMode(1600, 900), projectCode, style, settings);
+	win.create(style == sf::Style::Fullscreen ? desk : VideoMode(desk.width * 5 / 6, desk.height * 5 / 6), projectCode, style, settings);
 	win.clear();
 	win.display();
 	if (useVSync)
@@ -117,7 +118,7 @@ int main(int argc, char* argv[]) {
 	isProgramRunning = true;
 
 	cout << projectCode << ' ' << projectSuffix << "\n  Stage " << releaseStage << endl;
-	cout << "Version " << majorVersion << "." << minorVersion << "." << releaseVersion << "." << build << " " << releaseStage << ", Complie Time: " << compileTime << endl << endl;
+	cout << "Version " << majorVersion << "." << minorVersion << "." << releaseVersion << " " << releaseStage << ", Complie Time: " << compileTime << endl << endl;
 
 	//system("PAUSE>nul");
 
@@ -248,7 +249,7 @@ int main(int argc, char* argv[]) {
 			sleep(eventTickTime - t);
 		eventCycleClock.restart();
 
-					}
+	}
 	win.close();
 	mlog << "Shutdown In Progress..." << dlog;
 #ifdef USE_ASYNC_RENDERING
@@ -264,4 +265,4 @@ int main(int argc, char* argv[]) {
 	isProgramRunning = false;
 
 	return EXIT_SUCCESS;
-			}
+}
