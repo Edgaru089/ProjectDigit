@@ -23,7 +23,7 @@ public:
 	}
 
 	void setParam(string name, double value) {
-		params.push_back(pair<string, double>(name, value));
+		params[name] = value;
 	}
 
 	void update(RenderWindow& win, CoordSystem& coord) {
@@ -37,19 +37,17 @@ public:
 			rect = rect0;
 			unitL = coord.unitLength;
 
+			for (pair<const string, shared_ptr<Variable>>& i : func->changeVal) {
+				i.second->setValue(0.0);
+			}
+			for (pair<const string, double>& i : params) {
+				func->changeVVal(i.first, i.second);
+			}
+
 			VertexArray vert;
 			vert.setPrimitiveType(sf::PrimitiveType::LineStrip);
 			vert.clear();
 			verts.clear();
-
-			for (pair<const string, shared_ptr<Variable>>& i : func->changeVal) {
-				i.second->setValue(0.0);
-			}
-
-			//func->reinitalaizeConstVals();
-			for (pair<string, double>& i : params) {
-				func->changeVVal(i.first, i.second);
-			}
 
 			for (double i = left - step; i <= right + step; i += step) {
 				func->changeXCoord(i);
@@ -89,7 +87,7 @@ public:
 private:
 
 	Script::DisplayFunction* func;
-	vector<pair<string, double>> params;
+	map<string, double> params;
 
 	vector<VertexArray> verts;
 	FloatRect rect;

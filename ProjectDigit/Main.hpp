@@ -265,6 +265,7 @@ void sfMessageBox(Desktop& desktop, String content, String title = L"Infomation"
 	desktop.Add(window);
 }
 
+
 #include "FunctionAllocator.hpp"
 
 #include "Variable.hpp"

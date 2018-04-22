@@ -25,6 +25,9 @@
     <Filter Include="头文件\Graphics">
       <UniqueIdentifier>{9c5992ef-bc48-44be-ae9b-6cb0a4d30065}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\GUI">
+      <UniqueIdentifier>{45a5b2d4-bdce-404c-8ff8-b4bbca5c3d43}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">

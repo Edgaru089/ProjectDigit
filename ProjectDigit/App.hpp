@@ -26,7 +26,7 @@ private:
 
 	void loadScriptFile(string filename);
 
-	shared_ptr<Widget> initFunctionList();
+	shared_ptr<Widget> constructFunctionGUI(string name);
 
 	Desktop* desktop;
 
@@ -69,6 +69,10 @@ private:
 	Window::Ptr immediateWindow;
 	Entry::Ptr immediateEntry;
 	Button::Ptr immediateParseButton;
+
+	//////////////////////////////
+
+	Window::Ptr functionWin;
 
 	//////////////////////////////
 
@@ -149,14 +153,14 @@ void App::initalaize(Desktop* d) {
 
 	//////////////////////////////
 
-	settingsWin = Window::Create(Window::BACKGROUND | Window::SHADOW | Window::TITLEBAR | Window::CLOSE | Window::TOPLEVEL);
+	settingsWin = Window::Create(Window::BACKGROUND | Window::SHADOW | Window::TITLEBAR | Window::CLOSE);
 	settingsWin->SetRequisition(Vector2f(600.0f, 0.0f));
 	settingsWin->Show(false);
 	settingsWin->SetTitle(L"Settings");
 	settingsWin->GetSignal(Window::OnCloseButton).Connect([&]() {settingsWin->Show(false); });
 
 	settingNote = Notebook::Create();
-	
+
 	pageGraphics = Table::Create();
 	pageAdvGraphics = Table::Create();
 
@@ -195,8 +199,60 @@ void App::initalaize(Desktop* d) {
 	immediateParseButton->GetSignal(Button::OnLeftClick).Connect(parseImmediate);
 
 	immediateWindow->Add(box);
-
 	desktop->Add(immediateWindow);
+
+	//////////////////////////////
+
+	functionWin = Window::Create(Window::BACKGROUND | Window::SHADOW | Window::TITLEBAR);
+	functionWin->SetTitle(L"Function Options");
+	functionWin->SetRequisition(Vector2f(350.0f, 0.0f));
+
+	desktop->Add(functionWin);
+}
+
+shared_ptr<Widget> App::constructFunctionGUI(string name) {
+	mlog << "[GUI] Constructing Function GUI: " << name << dlog;
+
+	auto box = Box::Create(Box::Orientation::VERTICAL, 2.0f);
+	auto valFrame = Frame::Create(L"Variables");
+	auto valTable = Table::Create();
+
+	shared_ptr<Function> func = script.functions[name];
+	shared_ptr<Script::DisplayFunction> dp;
+	FunctionRenderer* fr;
+	for (Script::DisplayFunction&i : script.displays)
+		if (i.name == name) {
+			dp = make_shared<Script::DisplayFunction>(i);
+			break;
+		}
+	for (FunctionRenderer& i : renderer)
+		if (i.getName() == name) {
+			fr = &i;
+			break;
+		}
+
+	int j = 0;
+	for (pair<const string, shared_ptr<Variable>>&i : dp->changeVal) {
+		mlogd << "      SETVAL Name: " << i.first << dlog;
+		auto spin = SpinButton::Create(-1000.0f, 1000.0f, 0.5f);
+		spin->SetValue(0.0f);
+		spin->SetDigits(2);
+		spin->GetSignal(SpinButton::OnValueChanged).Connect(bind([fr, spin](string valName) {
+			mlogd << "[GUI/Function] Variable spinner value changed: " << valName << " of function " << fr->getName() << dlog;
+			fr->setParam(valName, spin->GetValue());
+			fr->forceUpdate();
+		}, i.first));
+
+		valTable->Attach(Label::Create(i.first), UintRect(0, j, 1, 1), Table::FILL, Table::FILL);
+		valTable->Attach(spin, UintRect(1, j, 1, 1), Table::FILL | Table::EXPAND, Table::FILL);
+
+		j++;
+	}
+	valFrame->Add(valTable);
+
+	box->Pack(valFrame);
+
+	return box;
 }
 
 void App::initalaizePostWindow(RenderWindow& win, Desktop* d) {
@@ -272,65 +328,13 @@ void App::loadScriptFile(string filename) {
 	//functionFrame->Add(initFunctionList());
 	//mainWin->SetAllocation(FloatRect(mainWin->GetAllocation().left, mainWin->GetAllocation().top,
 	//	mainWin->GetRequisition().x, mainWin->GetRequisition().y));
-	logicDataLock.unlock();
-}
 
-shared_ptr<Widget> App::initFunctionList() {
-	Box::Ptr box;
-	box = Box::Create(Box::Orientation::VERTICAL, 5.0f);
-
-	if (renderer.size() == 0)
-		box->Pack(Label::Create(L"No functions displayed."));
-
+	auto box = Box::Create(Box::Orientation::VERTICAL);
 	for (FunctionRenderer& i : renderer) {
-
-		Frame::Ptr frame = Frame::Create(i.getName());
-
-		Table::Ptr colorTable = Table::Create();
-		Label::Ptr en1 = Label::Create(L"255"), en2 = Label::Create(L"255"), en3 = Label::Create(L"255");
-		Scrollbar::Ptr scr1 = Scrollbar::Create(), scr2 = Scrollbar::Create(), scr3 = Scrollbar::Create();
-
-		auto onColorChange = [=](FunctionRenderer& ren) {
-			Uint16 R = scr1->GetAdjustment()->GetValue(),
-				G = scr2->GetAdjustment()->GetValue(),
-				B = scr3->GetAdjustment()->GetValue();
-			//mlog << "ColorChange " << ren.getName() << " " << R << " " << G << " " << B << dlog;
-			ren.setColor(Color(R, G, B));
-			ren.forceUpdate();
-			desktop->SetProperty("Label"s + ren.getName(), "Color", Color(R, G, B));
-
-			en1->SetText(StringParser::toStringFormatted("%03d", R));
-			en2->SetText(StringParser::toStringFormatted("%03d", G));
-			en3->SetText(StringParser::toStringFormatted("%03d", B));
-		};
-
-		scr1->GetAdjustment()->Configure(255, 0, 265, 2, 16, 10);
-		scr2->GetAdjustment()->Configure(255, 0, 265, 2, 16, 10);
-		scr3->GetAdjustment()->Configure(255, 0, 265, 2, 16, 10);
-		scr1->GetAdjustment()->SetValue(255);
-		scr2->GetAdjustment()->SetValue(255);
-		scr3->GetAdjustment()->SetValue(255);
-		scr1->GetAdjustment()->GetSignal(Adjustment::OnChange).Connect(bind(onColorChange, ref(i)));
-		scr2->GetAdjustment()->GetSignal(Adjustment::OnChange).Connect(bind(onColorChange, ref(i)));
-		scr3->GetAdjustment()->GetSignal(Adjustment::OnChange).Connect(bind(onColorChange, ref(i)));
-
-		colorTable->Attach(Label::Create(L"Red"), UintRect(0, 0, 1, 1), Table::FILL, Table::FILL);
-		colorTable->Attach(scr1, UintRect(1, 0, 1, 1), Table::FILL | Table::EXPAND, Table::FILL);
-		colorTable->Attach(en1, UintRect(2, 0, 1, 1), Table::FILL, Table::FILL);
-
-		colorTable->Attach(Label::Create(L"Green"), UintRect(0, 1, 1, 1), Table::FILL, Table::FILL);
-		colorTable->Attach(scr2, UintRect(1, 1, 1, 1), Table::FILL | Table::EXPAND, Table::FILL);
-		colorTable->Attach(en2, UintRect(2, 1, 1, 1), Table::FILL, Table::FILL);
-
-		colorTable->Attach(Label::Create(L"Blue"), UintRect(0, 2, 1, 1), Table::FILL, Table::FILL);
-		colorTable->Attach(scr3, UintRect(1, 2, 1, 1), Table::FILL | Table::EXPAND, Table::FILL);
-		colorTable->Attach(en3, UintRect(2, 2, 1, 1), Table::FILL, Table::FILL);
-
-
-		frame->Add(colorTable);
-
-		box->Pack(frame);
+		box->Pack(constructFunctionGUI(i.getName()));
 	}
+	functionWin->RemoveAll();
+	functionWin->Add(box);
 
-	return box;
+	logicDataLock.unlock();
 }
