@@ -72,7 +72,7 @@ private:
 
 	//////////////////////////////
 
-	Window::Ptr functionWin;
+	//Window::Ptr functionWin;
 	ComboBox::Ptr funcCombo;
 	Box::Ptr funcBox;
 
@@ -92,8 +92,8 @@ void App::initalaize(Desktop* d) {
 	coord.coordLineColor = Color(64, 64, 64);
 
 	offset = Vector2f(0.0f, 0.0f);
-
-	////////////////////////////// GUI INITALAIZATION //////////////////////////////
+	
+	////////////////////////////// GUI INITIALIZATION //////////////////////////////
 
 	mainWin = Window::Create(Window::BACKGROUND | Window::TITLEBAR | Window::SHADOW);
 	mainBox = Box::Create(Box::Orientation::VERTICAL, 5.0f);
@@ -150,9 +150,6 @@ void App::initalaize(Desktop* d) {
 	//functionFrame->Add(initFunctionList());
 	//mainBox->Pack(functionFrame, false);
 
-	mainWin->Add(mainBox);
-	desktop->Add(mainWin);
-
 	//////////////////////////////
 
 	settingsWin = Window::Create(Window::BACKGROUND | Window::SHADOW | Window::TITLEBAR | Window::CLOSE);
@@ -197,9 +194,9 @@ void App::initalaize(Desktop* d) {
 		funcBox->RemoveAll();
 		if (funcCombo->GetSelectedItem() != ComboBox::NONE)
 			funcBox->Pack(constructFunctionGUI(funcCombo->GetSelectedText()));
-		FloatRect allocation = functionWin->GetAllocation();
-		Vector2f requisition = functionWin->GetRequisition();
-		functionWin->SetAllocation(FloatRect(allocation.left, allocation.top, requisition.x, requisition.y));
+		FloatRect allocation = mainWin->GetAllocation();
+		Vector2f requisition = mainWin->GetRequisition();
+		mainWin->SetAllocation(FloatRect(allocation.left, allocation.top, requisition.x, requisition.y));
 
 		//functionFrame->RemoveAll();
 		//functionFrame->Add(initFunctionList());
@@ -216,9 +213,9 @@ void App::initalaize(Desktop* d) {
 
 	//////////////////////////////
 
-	functionWin = Window::Create(Window::BACKGROUND | Window::SHADOW | Window::TITLEBAR | Window::RESIZE);
-	functionWin->SetTitle(L"Function Options");
-	functionWin->SetRequisition(Vector2f(350.0f, 0.0f));
+	//functionWin = Window::Create(Window::BACKGROUND | Window::SHADOW | Window::TITLEBAR | Window::RESIZE);
+	//functionWin->SetTitle(L"Function Options");
+	//functionWin->SetRequisition(Vector2f(350.0f, 0.0f));
 
 	funcCombo = ComboBox::Create();
 	funcBox = Box::Create(Box::Orientation::VERTICAL);
@@ -226,17 +223,23 @@ void App::initalaize(Desktop* d) {
 		funcBox->RemoveAll();
 		if (funcCombo->GetSelectedItem() != ComboBox::NONE)
 			funcBox->Pack(constructFunctionGUI(funcCombo->GetSelectedText()));
-		FloatRect allocation = functionWin->GetAllocation();
-		Vector2f requisition = functionWin->GetRequisition();
-		functionWin->SetAllocation(FloatRect(allocation.left, allocation.top, requisition.x, requisition.y));
+		FloatRect allocation = mainWin->GetAllocation();
+		Vector2f requisition = mainWin->GetRequisition();
+		mainWin->SetAllocation(FloatRect(allocation.left, allocation.top, requisition.x, requisition.y));
 	});
 
 	box = Box::Create(Box::Orientation::VERTICAL, 3.0f);
 	box->Pack(funcCombo);
 	box->Pack(funcBox);
-	functionWin->Add(box);
+	//functionWin->Add(box);
+	auto frame = Frame::Create(L"Function Controls");
+	frame->Add(box);
+	mainBox->Pack(frame);
 
-	desktop->Add(functionWin);
+	//desktop->Add(functionWin);
+
+	mainWin->Add(mainBox);
+	desktop->Add(mainWin);
 }
 
 shared_ptr<Widget> App::constructFunctionGUI(string name) {
@@ -245,6 +248,8 @@ shared_ptr<Widget> App::constructFunctionGUI(string name) {
 	auto box = Box::Create(Box::Orientation::VERTICAL, 2.0f);
 	auto valFrame = Frame::Create(L"Variables");
 	auto valTable = Table::Create();
+	valTable->SetColumnSpacings(2.0f);
+	valTable->SetRowSpacings(2.0f);
 
 	shared_ptr<Function> func = script.functions[name];
 	shared_ptr<Script::DisplayFunction> dp;
@@ -271,6 +276,7 @@ shared_ptr<Widget> App::constructFunctionGUI(string name) {
 			fr->setParam(valName, spin->GetValue());
 			fr->forceUpdate();
 		}, i.first));
+		spin->SetRequisition(Vector2f(0.0f, 21.0f));
 
 		valTable->Attach(Label::Create(i.first), UintRect(0, j, 1, 1), Table::FILL, Table::FILL | Table::EXPAND);
 		valTable->Attach(spin, UintRect(1, j, 1, 1), Table::FILL | Table::EXPAND, Table::FILL | Table::EXPAND);
@@ -363,9 +369,9 @@ void App::loadScriptFile(string filename) {
 	for (FunctionRenderer& i : renderer)
 		funcCombo->AppendItem(i.getName());
 	funcBox->RemoveAll();
-	FloatRect allocation = functionWin->GetAllocation();
-	Vector2f requisition = functionWin->GetRequisition();
-	functionWin->SetAllocation(FloatRect(allocation.left, allocation.top, requisition.x, requisition.y));
+	FloatRect allocation = mainWin->GetAllocation();
+	Vector2f requisition = mainWin->GetRequisition();
+	mainWin->SetAllocation(FloatRect(allocation.left, allocation.top, requisition.x, requisition.y));
 
 	logicDataLock.unlock();
 }
