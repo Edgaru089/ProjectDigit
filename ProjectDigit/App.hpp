@@ -73,6 +73,8 @@ private:
 	//////////////////////////////
 
 	Window::Ptr functionWin;
+	ComboBox::Ptr funcCombo;
+	Box::Ptr funcBox;
 
 	//////////////////////////////
 
@@ -203,9 +205,22 @@ void App::initalaize(Desktop* d) {
 
 	//////////////////////////////
 
-	functionWin = Window::Create(Window::BACKGROUND | Window::SHADOW | Window::TITLEBAR);
+	functionWin = Window::Create(Window::BACKGROUND | Window::SHADOW | Window::TITLEBAR | Window::RESIZE);
 	functionWin->SetTitle(L"Function Options");
 	functionWin->SetRequisition(Vector2f(350.0f, 0.0f));
+
+	funcCombo = ComboBox::Create();
+	funcBox = Box::Create(Box::Orientation::VERTICAL);
+	funcCombo->GetSignal(ComboBox::OnSelect).Connect(bind([this](Box::Ptr box, ComboBox::Ptr funcCombo) {
+		box->RemoveAll();
+		if (funcCombo->GetSelectedItem() != ComboBox::NONE)
+			box->Pack(constructFunctionGUI(funcCombo->GetSelectedText()));
+	}, funcBox, funcCombo));
+
+	box = Box::Create(Box::Orientation::VERTICAL, 3.0f);
+	box->Pack(funcCombo);
+	box->Pack(funcBox);
+	functionWin->Add(box);
 
 	desktop->Add(functionWin);
 }
@@ -219,7 +234,7 @@ shared_ptr<Widget> App::constructFunctionGUI(string name) {
 
 	shared_ptr<Function> func = script.functions[name];
 	shared_ptr<Script::DisplayFunction> dp;
-	FunctionRenderer* fr;
+	FunctionRenderer* fr = nullptr;
 	for (Script::DisplayFunction&i : script.displays)
 		if (i.name == name) {
 			dp = make_shared<Script::DisplayFunction>(i);
@@ -235,7 +250,7 @@ shared_ptr<Widget> App::constructFunctionGUI(string name) {
 	for (pair<const string, shared_ptr<Variable>>&i : dp->changeVal) {
 		mlogd << "      SETVAL Name: " << i.first << dlog;
 		auto spin = SpinButton::Create(-1000.0f, 1000.0f, 0.5f);
-		spin->SetValue(0.0f);
+		spin->SetValue(fr->getParam(i.first));
 		spin->SetDigits(2);
 		spin->GetSignal(SpinButton::OnValueChanged).Connect(bind([fr, spin](string valName) {
 			mlogd << "[GUI/Function] Variable spinner value changed: " << valName << " of function " << fr->getName() << dlog;
@@ -319,6 +334,8 @@ void App::loadScriptFile(string filename) {
 	ScriptParser::parseFromFile(s, filename);
 
 	logicDataLock.lock();
+	funcCombo->Clear();
+
 	script = s;
 	renderer.resize(script.displays.size());
 	for (int i = 0; i < script.displays.size(); i++) {
@@ -329,12 +346,8 @@ void App::loadScriptFile(string filename) {
 	//mainWin->SetAllocation(FloatRect(mainWin->GetAllocation().left, mainWin->GetAllocation().top,
 	//	mainWin->GetRequisition().x, mainWin->GetRequisition().y));
 
-	auto box = Box::Create(Box::Orientation::VERTICAL);
-	for (FunctionRenderer& i : renderer) {
-		box->Pack(constructFunctionGUI(i.getName()));
-	}
-	functionWin->RemoveAll();
-	functionWin->Add(box);
+	for (FunctionRenderer& i : renderer)
+		funcCombo->AppendItem(i.getName());
 
 	logicDataLock.unlock();
 }

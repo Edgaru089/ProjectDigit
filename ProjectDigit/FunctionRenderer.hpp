@@ -26,6 +26,10 @@ public:
 		params[name] = value;
 	}
 
+	double getParam(string name) {
+		return params[name];
+	}
+
 	void update(RenderWindow& win, CoordSystem& coord) {
 		Vector2f vCenter = win.getView().getCenter(), vSize = win.getView().getSize();
 		FloatRect rect0 = FloatRect(vCenter.x - vSize.x / 2.0f, vCenter.y - vSize.y / 2.0f, vSize.x, vSize.y);
