@@ -36,8 +36,10 @@ void threadRendering(SFGUI& sfgui) {
 		sfgui.Display(win);
 		logicDataLock.unlock();
 
+		View v = win.getView();
 		win.setView(View(FloatRect(0, 0, win.getSize().x, win.getSize().y)));
 		win.draw(text);
+		win.setView(v);
 
 		win.display();
 
@@ -242,8 +244,10 @@ int main(int argc, char* argv[]) {
 		win.clear();
 		app->onRender(win);
 		sfgui.Display(win);
+		View v = win.getView();
 		win.setView(View(FloatRect(0, 0, win.getSize().x, win.getSize().y)));
 		win.draw(text);
+		win.setView(v);
 		win.display();
 #endif
 
