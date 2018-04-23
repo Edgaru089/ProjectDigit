@@ -118,9 +118,10 @@ public:
 		Script _script;
 		if (!emptyScriptOnFailure)
 			_script = script;
-		// This line is a comment; ignoring
-		if (str[0] == '#')
-			return true;
+		// Scan for comments
+		size_t pos= str.find('#');
+		if (pos != string::npos)
+			str.resize(pos);
 		try {
 			if (line != -1)
 				mlogd << "[Script] Line " << line << ":" << dlog;

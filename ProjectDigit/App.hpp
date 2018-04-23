@@ -22,6 +22,8 @@ public:
 
 	void handleEvent(sf::RenderWindow& win, sf::Event& e);
 
+	void onViewportChange(RenderWindow& win);
+
 private:
 
 	void loadScriptFile(string filename);
@@ -92,7 +94,7 @@ void App::initalaize(Desktop* d) {
 	coord.coordLineColor = Color(64, 64, 64);
 
 	offset = Vector2f(0.0f, 0.0f);
-	
+
 	////////////////////////////// GUI INITIALIZATION //////////////////////////////
 
 	mainWin = Window::Create(Window::BACKGROUND | Window::TITLEBAR | Window::SHADOW);
@@ -339,11 +341,14 @@ void App::handleEvent(RenderWindow& win, Event& e) {
 		}
 	}
 	else if (e.type == Event::Resized) {
-		float height = immediateWindow->GetRequisition().y;
-		immediateWindow->SetAllocation(FloatRect(0.0f, win.getSize().y - height, win.getSize().x, height));
-
+		onViewportChange(win);
 		//mainWin->SetAllocation(FloatRect(0.0f, 0.0f, mainWin->GetRequisition().x, win.getSize().y - height));
 	}
+}
+
+void App::onViewportChange(RenderWindow& win) {
+	float height = immediateWindow->GetRequisition().y;
+	immediateWindow->SetAllocation(FloatRect(0.0f, win.getSize().y - height, win.getSize().x, height));
 }
 
 

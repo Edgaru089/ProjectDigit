@@ -50,7 +50,9 @@ using sf::Uint32;\
 using sf::Uint64;\
 using sf::String;\
 using sf::Mouse;\
-using sf::Keyboard
+using sf::Keyboard;\
+using sf::Text;\
+using sf::Font
 
 USING_NAMESPACE;
 
@@ -93,6 +95,7 @@ int logicTickPerSecond, logicTickCounter, framePerSecond, frameCounter, eventTic
 Clock logicTickCounterClock, frameCounterClock, eventTickCounterClock;
 Clock programRunTimeClock;  //Nerer resets; started as time (for this process) begins
 atomic_bool isReady;
+Text text;
 
 Clock desktopUpdate;
 Desktop* desktop;

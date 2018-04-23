@@ -36,6 +36,9 @@ void threadRendering(SFGUI& sfgui) {
 		sfgui.Display(win);
 		logicDataLock.unlock();
 
+		win.setView(View(FloatRect(0, 0, win.getSize().x, win.getSize().y)));
+		win.draw(text);
+
 		win.display();
 
 		renderLock.unlock();
@@ -46,6 +49,7 @@ void threadRendering(SFGUI& sfgui) {
 			framePerSecond = frameCounter;
 			frameCounter = 0;
 			win.setTitle(StringParser::toStringFormatted("%s | Async | TPS: %d, EPS: %d, FPS: %d", projectCode.c_str(), logicTickPerSecond, eventTickPerSecond, framePerSecond));
+			text.setString(StringParser::toStringFormatted("Async | TPS: %d, EPS: %d, FPS: %d", logicTickPerSecond, eventTickPerSecond, framePerSecond));
 		}
 	}
 }
@@ -148,13 +152,15 @@ int main(int argc, char* argv[]) {
 	//sf::Font fon;
 	//fon.loadFromFile("C:\\Windows\\Fonts\\msyh.ttc");
 	//Context::Get().GetEngine().GetResourceManager().SetDefaultFont(make_shared<sf::Font>(fon));
+	text.setFont(*Context::Get().GetEngine().GetResourceManager().GetFont(""));
+	text.setCharacterSize(14);
 
 	desktop = new Desktop();
 
 	app = new App();
 	app->initalaize(desktop);
 
-	desktop->Update(0.0f);
+	desktop->Update(0.5f);
 
 #ifdef SFML_SYSTEM_WINDOWS
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)systemExitEventHandler, true);
@@ -207,6 +213,7 @@ int main(int argc, char* argv[]) {
 #endif
 						initRenderWindow(sf::Style::Fullscreen);
 						isFullscreen = true;
+						app->onViewportChange(win);
 #ifdef USE_ASYNC_RENDERING
 						win.setActive(false);
 						logicDataLock.unlock();
@@ -220,6 +227,7 @@ int main(int argc, char* argv[]) {
 #endif
 						initRenderWindow();
 						isFullscreen = false;
+						app->onViewportChange(win);
 #ifdef USE_ASYNC_RENDERING
 						win.setActive(false);
 						logicDataLock.unlock();
@@ -234,6 +242,8 @@ int main(int argc, char* argv[]) {
 		win.clear();
 		app->onRender(win);
 		sfgui.Display(win);
+		win.setView(View(FloatRect(0, 0, win.getSize().x, win.getSize().y)));
+		win.draw(text);
 		win.display();
 #endif
 
@@ -242,6 +252,10 @@ int main(int argc, char* argv[]) {
 			eventTickCounterClock.restart();
 			eventTickPerSecond = eventTickCounter;
 			eventTickCounter = 0;
+#ifndef USE_ASYNC_RENDERING
+			win.setTitle(StringParser::toStringFormatted("%s | Mono-Thread | FPS: %d", projectCode.c_str(), eventTickPerSecond));
+			text.setString(StringParser::toStringFormatted("Mono-Thread | FPS: %d", eventTickPerSecond));
+#endif
 		}
 
 		Time t;
