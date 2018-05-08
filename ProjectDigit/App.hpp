@@ -324,6 +324,7 @@ void App::updateLogic(RenderWindow& win) {
 		prevMouse = Vector2i(-100000, -10000);
 
 	for (FunctionRenderer& i : renderer) {
+		win.setView(View(offset, Vector2f(win.getSize().x, win.getSize().y)));
 		i.update(win, coord);
 	}
 
