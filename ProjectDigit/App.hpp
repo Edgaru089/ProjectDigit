@@ -18,6 +18,8 @@ public:
 
 	void onRender(sf::RenderWindow& win);
 
+	void runImGui();
+
 	void updateLogic(sf::RenderWindow& win);
 
 	void handleEvent(sf::RenderWindow& win, sf::Event& e);
@@ -352,6 +354,24 @@ void App::onViewportChange(RenderWindow& win) {
 	immediateWindow->SetAllocation(FloatRect(0.0f, win.getSize().y - height, win.getSize().x, height));
 }
 
+void App::runImGui() {
+
+	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
+	imgui::Begin("Logs");
+	imgui::BeginChild("DigitLogScroll", Vector2i(0, 0), true);
+
+	static int size;
+	for (const string& i : dlog.getBuffers())
+		imgui::Text((i + '\n').c_str());
+
+	if (size != dlog.getBuffers().size())
+		imgui::SetScrollY(imgui::GetScrollMaxY());
+	size = dlog.getBuffers().size();
+
+	imgui::EndChild();
+	imgui::End();
+
+}
 
 void App::loadScriptFile(string filename) {
 	//L"\u2588"

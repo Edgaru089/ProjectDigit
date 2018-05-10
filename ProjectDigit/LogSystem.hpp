@@ -9,6 +9,8 @@
 #include "StringParser.hpp"
 using namespace std;
 
+#define AUTOLOCK(a) lock_guard<mutex> lock(a)
+
 class Log {
 public:
 
@@ -31,12 +33,15 @@ public:
 		time_t curtime = time(NULL);
 		char buffer[64];
 		strftime(buffer, 63, "[%T", localtime(&curtime));
-		string final = string(buffer) + " " + logLevelName[level] + "]: " + content + "\n";
+		string final = string(buffer) + " " + logLevelName[level] + "]: " + content;
 		lock.lock();
+		buffers.push_back(final);
 		for (ostream* i : out) {
-			(*i) << final;
+			(*i) << final << '\n';
 			i->flush();
 		}
+		for (const auto& i : outf)
+			i(final);
 		lock.unlock();
 	}
 
@@ -53,14 +58,21 @@ public:
 
 	void addOutputStream(ostream& output) { out.push_back(&output); }
 	void addOutputStream(ostream* output) { out.push_back(output); }
+	void addOutputHandler(function<void(const string&)> output) { outf.push_back(output); }
 
 	// Lower and equal; use -1 to ignore nothing
 	void ignore(int level) { ignoreLevel = level; }
 
+	const vector<string>& getBuffers() { AUTOLOCK(lock); return buffers; }
+	void clearBuffer() { AUTOLOCK(lock); buffers.clear(); }
+
 private:
 	vector<ostream*> out;
-	recursive_mutex lock;
+	vector<function<void(const string&)>> outf;
+	mutex lock;
 	int ignoreLevel;
+
+	vector<string> buffers;
 };
 
 Log dlog;

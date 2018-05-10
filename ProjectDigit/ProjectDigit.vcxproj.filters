@@ -28,10 +28,28 @@
     <Filter Include="头文件\GUI">
       <UniqueIdentifier>{45a5b2d4-bdce-404c-8ff8-b4bbca5c3d43}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\GUI\ImGui">
+      <UniqueIdentifier>{f84b5ae0-bec0-4387-b67a-d75bc554dba5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\ImGui">
+      <UniqueIdentifier>{be1449b3-994f-403b-8735-0dd75ad9e57b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui.cpp">
+      <Filter>源文件\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_demo.cpp">
+      <Filter>源文件\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_draw.cpp">
+      <Filter>源文件\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui-SFML.cpp">
+      <Filter>源文件\ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -76,6 +94,33 @@
     </ClInclude>
     <ClInclude Include="SpinEntry.hpp">
       <Filter>头文件\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imconfig.h">
+      <Filter>头文件\GUI\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imconfig-SFML.h">
+      <Filter>头文件\GUI\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui.h">
+      <Filter>头文件\GUI\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_internal.h">
+      <Filter>头文件\GUI\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui-setup.h">
+      <Filter>头文件\GUI\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui-SFML.h">
+      <Filter>头文件\GUI\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\stb_rect_pack.h">
+      <Filter>头文件\GUI\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\stb_textedit.h">
+      <Filter>头文件\GUI\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\stb_truetype.h">
+      <Filter>头文件\GUI\ImGui</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
