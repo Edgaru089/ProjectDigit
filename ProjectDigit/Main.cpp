@@ -182,6 +182,8 @@ int main(int argc, char* argv[]) {
 
 	ImGui::SFML::Init(win);
 	ImGui::StyleColorsClassic();
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.FrameBorderSize = 1.0f;
 
 	app->initalaizePostWindow(win, desktop);
 
@@ -203,10 +205,17 @@ int main(int argc, char* argv[]) {
 
 			ImGui::SFML::ProcessEvent(event);
 
+			if ((ImGui::GetIO().WantCaptureKeyboard &&
+				(event.type == Event::KeyPressed || event.type == Event::KeyReleased || event.type == Event::TextEntered)) ||
+				(ImGui::GetIO().WantCaptureMouse && (event.type == Event::MouseButtonPressed || event.type ==
+				Event::MouseButtonReleased || event.type == Event::MouseMoved))) {
+				logicDataLock.unlock();
+				continue;
+			}
+
 			desktop->HandleEvent(event);
 			app->handleEvent(win, event);
 			desktop->Update(desktopUpdate.restart().asSeconds());
-			ImGui::SFML::ProcessEvent(event);
 			logicDataLock.unlock();
 
 			if (event.type == Event::Closed) {
@@ -250,7 +259,7 @@ int main(int argc, char* argv[]) {
 #endif
 					}
 			}
-					}
+		}
 #ifndef USE_ASYNC_RENDERING
 		app->updateLogic(win);
 		desktop->Update(desktopUpdate.restart().asSeconds());
@@ -280,7 +289,7 @@ int main(int argc, char* argv[]) {
 			sleep(eventTickTime - t);
 		eventCycleClock.restart();
 
-			}
+					}
 	win.close();
 	mlog << "Shutdown In Progress..." << dlog;
 #ifdef USE_ASYNC_RENDERING
@@ -296,4 +305,4 @@ int main(int argc, char* argv[]) {
 	isProgramRunning = false;
 
 	return EXIT_SUCCESS;
-		}
+			}
