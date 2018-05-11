@@ -19,6 +19,7 @@
 using namespace std;
 
 void threadRendering(SFGUI& sfgui) {
+	static Clock imguiDeltaClock;
 	win.setActive(true);
 	while (isReady) {
 		if (!win.isOpen()) {
@@ -36,8 +37,15 @@ void threadRendering(SFGUI& sfgui) {
 		sfgui.Display(win);
 		logicDataLock.unlock();
 
+		ImGui::SFML::Update(win, imguiDeltaClock.restart());
+
+		app->runImGui();
+
+		logicDataLock.lock();
 		win.setView(View(FloatRect(0, 0, win.getSize().x, win.getSize().y)));
+		ImGui::SFML::Render(win);
 		win.draw(text);
+		logicDataLock.unlock();
 
 		win.display();
 
@@ -160,7 +168,7 @@ int main(int argc, char* argv[]) {
 	app = new App();
 	app->initalaize(desktop);
 
-	desktop->Update(0.5f);
+	desktop->Update(0.0f);
 
 #ifdef SFML_SYSTEM_WINDOWS
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)systemExitEventHandler, true);
@@ -171,6 +179,11 @@ int main(int argc, char* argv[]) {
 	initRenderWindow();
 
 	isReady = true;
+
+	ImGui::SFML::Init(win);
+	ImGui::StyleColorsClassic();
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.FrameBorderSize = 1.0f;
 
 	app->initalaizePostWindow(win, desktop);
 
@@ -189,6 +202,17 @@ int main(int argc, char* argv[]) {
 		while (win.pollEvent(event)) {
 
 			logicDataLock.lock();
+
+			ImGui::SFML::ProcessEvent(event);
+
+			if ((ImGui::GetIO().WantCaptureKeyboard &&
+				(event.type == Event::KeyPressed || event.type == Event::KeyReleased || event.type == Event::TextEntered)) ||
+				(ImGui::GetIO().WantCaptureMouse && (event.type == Event::MouseButtonPressed || event.type ==
+				Event::MouseButtonReleased || event.type == Event::MouseMoved))) {
+				logicDataLock.unlock();
+				continue;
+			}
+
 			desktop->HandleEvent(event);
 			app->handleEvent(win, event);
 			desktop->Update(desktopUpdate.restart().asSeconds());
@@ -265,7 +289,7 @@ int main(int argc, char* argv[]) {
 			sleep(eventTickTime - t);
 		eventCycleClock.restart();
 
-	}
+					}
 	win.close();
 	mlog << "Shutdown In Progress..." << dlog;
 #ifdef USE_ASYNC_RENDERING
@@ -281,4 +305,4 @@ int main(int argc, char* argv[]) {
 	isProgramRunning = false;
 
 	return EXIT_SUCCESS;
-}
+			}

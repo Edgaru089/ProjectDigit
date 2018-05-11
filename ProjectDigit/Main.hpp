@@ -12,6 +12,8 @@
 #include <SFGUI/SFGUI.hpp>
 #include <SFGUI/Widgets.hpp>
 
+#include "ImGui\imgui-setup.h"
+
 #include "LogSystem.hpp"
 
 #define USING_NAMESPACE \

@@ -18,6 +18,8 @@ public:
 
 	void onRender(sf::RenderWindow& win);
 
+	void runImGui();
+
 	void updateLogic(sf::RenderWindow& win);
 
 	void handleEvent(sf::RenderWindow& win, sf::Event& e);
@@ -245,8 +247,6 @@ void App::initalaize(Desktop* d) {
 }
 
 shared_ptr<Widget> App::constructFunctionGUI(string name) {
-	mlog << "[GUI] Constructing Function GUI: " << name << dlog;
-
 	auto box = Box::Create(Box::Orientation::VERTICAL, 2.0f);
 	auto valFrame = Frame::Create(L"Variables");
 	auto valTable = Table::Create();
@@ -352,6 +352,107 @@ void App::onViewportChange(RenderWindow& win) {
 	immediateWindow->SetAllocation(FloatRect(0.0f, win.getSize().y - height, win.getSize().x, height));
 }
 
+void App::runImGui() {
+
+	//////////////////// Log Window ////////////////////
+	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
+	imgui::Begin("Logs", NULL, ImGuiWindowFlags_MenuBar);
+
+	//////// Menu Bar ////////
+	static bool follow = true;
+	if (imgui::BeginMenuBar()) {
+		if (imgui::BeginMenu("Controls")) {
+			if (imgui::MenuItem("Clear"))
+				dlog.clearBuffer();
+			imgui::Separator();
+			imgui::MenuItem("Follow the end of log     ", NULL, &follow);
+			imgui::EndMenu();
+		}
+		imgui::EndMenuBar();
+	}
+
+	//////// Text Area ////////
+	imgui::BeginChild("DigitLogScroll", Vector2i(0, 0), true);
+	static float size;
+	for (const string& i : dlog.getBuffers())
+		imgui::Text((i + '\n').c_str());
+	if (size != imgui::GetScrollMaxY() && follow)
+		imgui::SetScrollY(imgui::GetScrollMaxY());
+	size = imgui::GetScrollMaxY();
+	imgui::EndChild();
+
+	imgui::End();
+
+	//////////////////// Controls Window ////////////////////
+	ImGui::SetNextWindowSize(ImVec2(350, 600), ImGuiCond_FirstUseEver);
+	imgui::Begin("Controls", NULL);
+
+	//////// Load File Frame ////////
+	static char filename[64];
+	if (imgui::InputText("Script filename", filename, 64, ImGuiInputTextFlags_EnterReturnsTrue)) {
+		thread([&]() {
+			loadScriptFile(filename);
+		}).detach();
+	}
+
+	//////// Unit Length Silder ////////
+	static int unit = coord.unitLength;
+	if (imgui::DragInt("Unit Length", &unit, 0.2f, 20, 700)) {
+		coord.unitLength = unit;
+	}
+
+	imgui::Separator();
+
+	//////// Function Area ////////
+	imgui::BeginChild("Functions");
+	imgui::Text("Function Settings");
+
+	static vector<float> value;
+	static vector<vector<float>> color;
+	int l = 0, k = 0;
+	color.resize(script.displays.size());
+	for (Script::DisplayFunction& dp : script.displays) {
+		imgui::SetNextTreeNodeOpen(true, ImGuiCond_Always);
+		bool gui = imgui::TreeNode(dp.name.c_str());
+		FunctionRenderer* fr = nullptr;
+		for (auto& i : renderer) {
+			if (i.getName() == dp.name) {
+				fr = &i;
+				break;
+			}
+		}
+
+		color[l].resize(3, 1.0f);
+
+		if (gui)
+			imgui::ColorEdit3("Color", &color[l][0], ImGuiColorEditFlags_PickerHueWheel);
+		if (fr->getColor() != Color(color[l][0] * 255, color[l][1] * 255, color[l][2] * 255)) {
+			fr->setColor(Color(color[l][0] * 255, color[l][1] * 255, color[l][2] * 255));
+			fr->forceUpdate();
+		}
+
+		l++;
+
+		for (pair<const string, shared_ptr<Variable>>& i : dp.changeVal) {
+			if (value.size() < k + 1)
+				value.resize(k + 1);
+			if (gui&&imgui::DragFloat(("Variable " + i.first).c_str(), &value[k], 0.01f)) {
+				fr->setParam(i.first, value[k]);
+				fr->forceUpdate();
+			}
+			k++;
+		}
+
+		if (gui)
+			imgui::TreePop();
+	}
+	value.resize(k + 1, 0.0f);
+
+	imgui::EndChild();
+
+	imgui::End();
+
+}
 
 void App::loadScriptFile(string filename) {
 	//L"\u2588"
