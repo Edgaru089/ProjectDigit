@@ -354,10 +354,11 @@ void App::onViewportChange(RenderWindow& win) {
 
 void App::runImGui() {
 
-	/////////////// Log Window ///////////////
+	//////////////////// Log Window ////////////////////
 	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
 	imgui::Begin("Logs", NULL, ImGuiWindowFlags_MenuBar);
 
+	//////// Menu Bar ////////
 	static bool follow = true;
 	if (imgui::BeginMenuBar()) {
 		if (imgui::BeginMenu("Controls")) {
@@ -370,6 +371,7 @@ void App::runImGui() {
 		imgui::EndMenuBar();
 	}
 
+	//////// Text Area ////////
 	imgui::BeginChild("DigitLogScroll", Vector2i(0, 0), true);
 	static float size;
 	for (const string& i : dlog.getBuffers())
@@ -381,10 +383,11 @@ void App::runImGui() {
 
 	imgui::End();
 
-	/////////////// Controls Window ///////////////
+	//////////////////// Controls Window ////////////////////
 	ImGui::SetNextWindowSize(ImVec2(350, 600), ImGuiCond_FirstUseEver);
 	imgui::Begin("Controls", NULL);
 
+	//////// Load File Frame ////////
 	static char filename[64];
 	if (imgui::InputText("Script filename", filename, 64, ImGuiInputTextFlags_EnterReturnsTrue)) {
 		thread([&]() {
@@ -392,15 +395,16 @@ void App::runImGui() {
 		}).detach();
 	}
 
+	//////// Unit Length Silder ////////
 	static int unit = coord.unitLength;
-	if (imgui::SliderInt("Unit Length", &unit, 30, 200)) {
+	if (imgui::DragInt("Unit Length", &unit, 0.2f, 20, 700)) {
 		coord.unitLength = unit;
 	}
 
 	imgui::Separator();
 
+	//////// Function Area ////////
 	imgui::BeginChild("Functions");
-
 	imgui::Text("Function Settings");
 
 	static vector<float> value;
