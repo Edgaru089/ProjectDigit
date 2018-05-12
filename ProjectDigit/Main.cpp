@@ -51,7 +51,6 @@ void threadRendering(SFGUI& sfgui) {
 
 		renderLock.unlock();
 
-		frameCounter++;
 		if (frameCounterClock.getElapsedTime() >= seconds(1.0f)) {
 			frameCounterClock.restart();
 			framePerSecond = frameCounter;
@@ -59,6 +58,7 @@ void threadRendering(SFGUI& sfgui) {
 			win.setTitle(StringParser::toStringFormatted("%s | Async | TPS: %d, EPS: %d, FPS: %d", projectCode.c_str(), logicTickPerSecond, eventTickPerSecond, framePerSecond));
 			text.setString(StringParser::toStringFormatted("Async | TPS: %d, EPS: %d, FPS: %d", logicTickPerSecond, eventTickPerSecond, framePerSecond));
 		}
+		frameCounter++;
 	}
 }
 
@@ -74,12 +74,12 @@ void threadLogicUpdate(int ticksPerSecond) {
 		logicDataLock.unlock();
 
 		Time t;
-		logicTickCounter++;
 		if (logicTickCounterClock.getElapsedTime() > seconds(1.0f)) {
 			logicTickCounterClock.restart();
 			logicTickPerSecond = logicTickCounter;
 			logicTickCounter = 0;
 		}
+		logicTickCounter++;
 		if ((t = logicCycleClock.getElapsedTime()) < tickTime)
 			sleep(tickTime - t);
 		logicCycleClock.restart();
@@ -273,7 +273,6 @@ int main(int argc, char* argv[]) {
 		win.display();
 #endif
 
-		eventTickCounter++;
 		if (eventTickCounterClock.getElapsedTime() >= seconds(1.0f)) {
 			eventTickCounterClock.restart();
 			eventTickPerSecond = eventTickCounter;
@@ -283,13 +282,14 @@ int main(int argc, char* argv[]) {
 			text.setString(StringParser::toStringFormatted("Mono-Thread | FPS: %d", eventTickPerSecond));
 #endif
 		}
+		eventTickCounter++;
 
 		Time t;
 		if ((t = eventCycleClock.getElapsedTime()) < eventTickTime)
 			sleep(eventTickTime - t);
 		eventCycleClock.restart();
 
-					}
+	}
 	win.close();
 	mlog << "Shutdown In Progress..." << dlog;
 #ifdef USE_ASYNC_RENDERING
@@ -305,4 +305,4 @@ int main(int argc, char* argv[]) {
 	isProgramRunning = false;
 
 	return EXIT_SUCCESS;
-			}
+}

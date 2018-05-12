@@ -24,6 +24,7 @@ public:
 
 	void setParam(string name, double value) {
 		params[name] = value;
+		forceUpdate();
 	}
 
 	double getParam(string name) {
@@ -80,7 +81,13 @@ public:
 			win.draw(i);
 	}
 
-	void setColor(Color color) { this->color = color; }
+	void setColor(Color color) {
+		this->color = color;
+		for (VertexArray& i : verts)
+			for (int j = 0; j < i.getVertexCount(); j++)
+				i[j].color = color;
+	}
+	
 	Color getColor() { return color; }
 
 	string getName() { return name; }

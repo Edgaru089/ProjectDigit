@@ -283,7 +283,6 @@ shared_ptr<Widget> App::constructFunctionGUI(string name) {
 		spin->GetSignal(SpinButton::OnValueChanged).Connect(bind([fr, spin](string valName) {
 			mlogd << "[GUI/Function] Variable spinner value changed: " << valName << " of function " << fr->getName() << dlog;
 			fr->setParam(valName, spin->GetValue());
-			fr->forceUpdate();
 		}, i.first));
 		spin->SetRequisition(Vector2f(0.0f, 21.0f));
 
@@ -366,28 +365,37 @@ void App::runImGui() {
 	imgui::Begin("Controls", NULL, ImGuiWindowFlags_MenuBar);
 
 	//////// Menu Bar ////////
-	static bool hasLog = true;
+	static bool hasLog = true, hasMetrics = false, hasDemo = false;
 	static char imm[256];
 	if (imgui::BeginMenuBar()) {
 		if (imgui::BeginMenu("Main")) {
 			imgui::MenuItem("Log Window       ", NULL, &hasLog);
-			imgui::Separator();
-			if (imgui::BeginMenu("Immediate Input  ")) {
-				if (imgui::InputText("Input", imm, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-					thread([&]() {
-						logicDataLock.lock();
-						ScriptParser::parseLine(script, imm);
-						ResetFunctionRenderers();
-						memset(imm, 0, sizeof(imm));
-						logicDataLock.unlock();
-					}).detach();
-				}
-				imgui::EndMenu();
+			imgui::MenuItem("Metrics Window   ", NULL, &hasMetrics);
+			imgui::MenuItem("Demo Window      ", NULL, &hasDemo);
+			imgui::EndMenu();
+		}
+		if (imgui::BeginMenu("Immediate Input")) {
+			if (imgui::InputText("Input", imm, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+				thread([&]() {
+					logicDataLock.lock();
+					ScriptParser::parseLine(script, imm);
+					ResetFunctionRenderers();
+					memset(imm, 0, sizeof(imm));
+					logicDataLock.unlock();
+				}).detach();
 			}
 			imgui::EndMenu();
 		}
 		imgui::EndMenuBar();
 	}
+
+	/// Show Metrics Window ///
+	if (hasMetrics)
+		imgui::ShowMetricsWindow(&hasMetrics);
+
+	/// Show Demo Window ///
+	if (hasDemo)
+		imgui::ShowDemoWindow(&hasDemo);
 
 	//////// Load File Frame ////////
 	static char filename[64];
@@ -428,20 +436,16 @@ void App::runImGui() {
 
 		if (gui)
 			imgui::ColorEdit3("Color", &color[l][0], ImGuiColorEditFlags_PickerHueWheel);
-		if (fr->getColor() != Color(color[l][0] * 255, color[l][1] * 255, color[l][2] * 255)) {
+		if (fr->getColor() != Color(color[l][0] * 255, color[l][1] * 255, color[l][2] * 255))
 			fr->setColor(Color(color[l][0] * 255, color[l][1] * 255, color[l][2] * 255));
-			fr->forceUpdate();
-		}
 
 		l++;
 
 		for (pair<const string, shared_ptr<Variable>>& i : dp.changeVal) {
 			if (value.size() < k + 1)
 				value.resize(k + 1);
-			if (gui&&imgui::DragFloat(("Variable " + i.first).c_str(), &value[k], 0.01f)) {
+			if (gui&&imgui::DragFloat(("Variable " + i.first).c_str(), &value[k], 0.01f))
 				fr->setParam(i.first, value[k]);
-				fr->forceUpdate();
-			}
 			k++;
 		}
 
