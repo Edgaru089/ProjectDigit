@@ -25,7 +25,7 @@ public:
 		FunctionStream
 	};
 
-	Script() :mode(FunctionStream) {}
+	Script() :mode(Expression) {}
 
 	class DisplayFunction {
 	public:
