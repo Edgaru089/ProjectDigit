@@ -116,6 +116,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <CreateHotpatchableImage>true</CreateHotpatchableImage>
+      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

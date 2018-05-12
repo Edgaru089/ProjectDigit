@@ -42,7 +42,7 @@ public:
 			map<string, shared_ptr<Variable>>::iterator i = constVal.find(name);
 			if (i != constVal.end()) {
 				i->second->setValue(value);
-				//constValD[name] = value;
+				constValD[name] = value;
 			}
 		}
 
@@ -55,21 +55,21 @@ public:
 		const double calculate() { return func->calculate(); }
 
 		void reinitalaizeConstVals() {
-			//for (pair<const string, double>& i : constValD) {
-				//constVal[i.first]->setValue(i.second);
-			//}
+			for (pair<const string, double>& i : constValD) {
+				constVal[i.first]->setValue(i.second);
+			}
 		}
 
 		// Default value: ZERO
 		map<string, shared_ptr<Variable>> changeVal, constVal, xCoordVal;
-		//map<string, double> constValD;
+		map<string, double> constValD;
 		shared_ptr<Function> func;
 		string name;
 	};
 
 	set<string> valNames;
 	map<string, shared_ptr<Function>> functions;
-	set<string> usedFunctions;
+	multiset<string> usedFunctions;
 	map<string, shared_ptr<Variable>> val;
 	vector<DisplayFunction> displays;
 
@@ -79,7 +79,7 @@ public:
 class ScriptParser {
 public:
 
-	class SyntaxErrorException:public exception {
+	class SyntaxErrorException :public exception {
 	public:
 		SyntaxErrorException(const string& what) :str(what) {}
 		const char* what() { return str.c_str(); }
@@ -119,7 +119,7 @@ public:
 		if (!emptyScriptOnFailure)
 			_script = script;
 		// Scan for comments
-		size_t pos= str.find('#');
+		size_t pos = str.find('#');
 		if (pos != string::npos)
 			str.resize(pos);
 		try {
@@ -127,14 +127,14 @@ public:
 				mlogd << "[Script] Line " << line << ":" << dlog;
 			else
 				mlog << "[Script] Parsing Immediate Window input: " << str << dlog;
-			if (str.substr(0u, 6u) == "defval") {
-				_defval(str.substr(6u), script);
+			if (str.substr(0u, 6u) == "defval" || str.substr(0u, 2u) == "dv") {
+				_defval(str.substr(str.find_first_of(' ')), script);
 			}
-			else if (str.substr(0u, 7u) == "deffunc") {
-				_deffunc(str.substr(7u), script);
+			else if (str.substr(0u, 7u) == "deffunc" || str.substr(0u, 2u) == "df") {
+				_deffunc(str.substr(str.find_first_of(' ')), script);
 			}
-			else if (str.substr(0u, 11u) == "displayfunc") {
-				_displayfunc(str.substr(11u), script);
+			else if (str.substr(0u, 11u) == "displayfunc" || str.substr(0u, 3u) == "dpf") {
+				_displayfunc(str.substr(str.find_first_of(' ')), script);
 			}
 			else if (str.substr(0u, 5u) == "clear") {
 				script = Script();
@@ -147,20 +147,22 @@ public:
 				else if (str[i] == '1' || str.substr(i, 4u) == "expr"s)
 					script.mode = Script::Expression;
 			}
-		} catch (SyntaxErrorException e) {
+		}
+		catch (SyntaxErrorException e) {
 			mlog << Log::Error << "[Script/EXCEPTION] ERROR(" << (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
 				"Line %d", line
-			)) << "): " << e.what() << dlog;
+				)) << "): " << e.what() << dlog;
 			if (desktop != NULL)
 				sfMessageBox(*desktop, "[Script/EXCEPTION] ERROR("s + (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
 					"Line %d"s, line
 				)) + "): "s + e.what(), L"Error");
 			script = _script;
 			return false;
-		} catch (exception e) {
+		}
+		catch (exception e) {
 			mlog << Log::Error << "[Script/EXCEPTION] UNKNOWN EXCEPTION(" << (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
 				"Line %d", line
-			)) << "): " << e.what() << dlog;
+				)) << "): " << e.what() << dlog;
 			if (desktop != NULL)
 				sfMessageBox(*desktop, "[Script/EXCEPTION] UNKNOWN EXCEPTION("s + (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
 					"Line %d"s, line
@@ -282,7 +284,8 @@ private:
 
 			try {
 				func->create(params);
-			} catch (Function::ParamCountMismatchException e) {
+			}
+			catch (Function::ParamCountMismatchException e) {
 				throw SyntaxErrorException("Function \""s + funcName + "\" parameter count mismatch"s);
 			}
 		}
@@ -418,7 +421,8 @@ private:
 
 							try {
 								func->create(params);
-							} catch (Function::ParamCountMismatchException e) {
+							}
+							catch (Function::ParamCountMismatchException e) {
 								throw SyntaxErrorException("Function \""s + funcName + "\" parameter count mismatch"s);
 							}
 						}
@@ -507,13 +511,10 @@ private:
 		if (script.functions.find(funcName) == script.functions.end())
 			throw SyntaxErrorException("Function \""s + funcName + "\" undefined"s);
 
-		// One function can only be used once
-		if (script.usedFunctions.find(funcName) != script.usedFunctions.end())
-			throw SyntaxErrorException("Function \""s + funcName + "\" used more than once"s);
-		else
-			script.usedFunctions.insert(funcName);
+		script.usedFunctions.insert(funcName);
+		int count = script.usedFunctions.count(funcName);
 
-		func.name = funcName;
+		func.name = funcName + StringParser::toStringFormatted(" #%02d", count);
 		func.func = script.functions[funcName];
 
 		// Find the "where" keyword

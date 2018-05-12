@@ -47,6 +47,7 @@ public:
 			for (pair<const string, double>& i : params) {
 				func->changeVVal(i.first, i.second);
 			}
+			func->reinitalaizeConstVals();
 
 			VertexArray vert;
 			vert.setPrimitiveType(sf::PrimitiveType::LineStrip);

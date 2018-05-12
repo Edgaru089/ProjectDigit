@@ -28,6 +28,8 @@ public:
 
 private:
 
+	void ResetFunctionRenderers();
+
 	void loadScriptFile(string filename);
 
 	shared_ptr<Widget> constructFunctionGUI(string name);
@@ -85,6 +87,25 @@ private:
 	function<void(void)> parseFile, parseImmediate, updateFunctionUI;
 };
 
+
+void App::ResetFunctionRenderers()
+{
+	renderer.clear();
+	renderer.resize(script.displays.size());
+	for (int i = 0; i < script.displays.size(); i++) {
+		renderer[i].create(script.displays[i], script.displays[i].name);
+	}
+
+	funcCombo->Clear();
+	for (FunctionRenderer& i : renderer)
+		funcCombo->AppendItem(i.getName());
+	funcBox->RemoveAll();
+	if (funcCombo->GetSelectedItem() != ComboBox::NONE)
+		funcBox->Pack(constructFunctionGUI(funcCombo->GetSelectedText()));
+	FloatRect allocation = mainWin->GetAllocation();
+	Vector2f requisition = mainWin->GetRequisition();
+	mainWin->SetAllocation(FloatRect(allocation.left, allocation.top, requisition.x, requisition.y));
+}
 
 void App::initalaize(Desktop* d) {
 	mlog << "App Initalaization" << dlog;
@@ -186,21 +207,7 @@ void App::initalaize(Desktop* d) {
 	parseImmediate = bind([&](Button::Ptr button, Entry::Ptr entry) {
 		logicDataLock.lock();
 		ScriptParser::parseLine(script, entry->GetText().toAnsiString());
-		renderer.clear();
-		renderer.resize(script.displays.size());
-		for (int i = 0; i < script.displays.size(); i++) {
-			renderer[i].create(script.displays[i], script.displays[i].name);
-		}
-
-		funcCombo->Clear();
-		for (FunctionRenderer& i : renderer)
-			funcCombo->AppendItem(i.getName());
-		funcBox->RemoveAll();
-		if (funcCombo->GetSelectedItem() != ComboBox::NONE)
-			funcBox->Pack(constructFunctionGUI(funcCombo->GetSelectedText()));
-		FloatRect allocation = mainWin->GetAllocation();
-		Vector2f requisition = mainWin->GetRequisition();
-		mainWin->SetAllocation(FloatRect(allocation.left, allocation.top, requisition.x, requisition.y));
+		ResetFunctionRenderers();
 
 		//functionFrame->RemoveAll();
 		//functionFrame->Add(initFunctionList());
@@ -354,38 +361,33 @@ void App::onViewportChange(RenderWindow& win) {
 
 void App::runImGui() {
 
-	//////////////////// Log Window ////////////////////
-	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
-	imgui::Begin("Logs", NULL, ImGuiWindowFlags_MenuBar);
+	//////////////////// Controls Window ////////////////////
+	ImGui::SetNextWindowSize(ImVec2(350, 600), ImGuiCond_FirstUseEver);
+	imgui::Begin("Controls", NULL, ImGuiWindowFlags_MenuBar);
 
 	//////// Menu Bar ////////
-	static bool follow = true;
+	static bool hasLog = true;
+	static char imm[256];
 	if (imgui::BeginMenuBar()) {
-		if (imgui::BeginMenu("Controls")) {
-			if (imgui::MenuItem("Clear"))
-				dlog.clearBuffer();
+		if (imgui::BeginMenu("Main")) {
+			imgui::MenuItem("Log Window       ", NULL, &hasLog);
 			imgui::Separator();
-			imgui::MenuItem("Follow the end of log     ", NULL, &follow);
+			if (imgui::BeginMenu("Immediate Input  ")) {
+				if (imgui::InputText("Input", imm, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+					thread([&]() {
+						logicDataLock.lock();
+						ScriptParser::parseLine(script, imm);
+						ResetFunctionRenderers();
+						memset(imm, 0, sizeof(imm));
+						logicDataLock.unlock();
+					}).detach();
+				}
+				imgui::EndMenu();
+			}
 			imgui::EndMenu();
 		}
 		imgui::EndMenuBar();
 	}
-
-	//////// Text Area ////////
-	imgui::BeginChild("DigitLogScroll", Vector2i(0, 0), true);
-	static float size;
-	for (const string& i : dlog.getBuffers())
-		imgui::Text((i + '\n').c_str());
-	if (size != imgui::GetScrollMaxY() && follow)
-		imgui::SetScrollY(imgui::GetScrollMaxY());
-	size = imgui::GetScrollMaxY();
-	imgui::EndChild();
-
-	imgui::End();
-
-	//////////////////// Controls Window ////////////////////
-	ImGui::SetNextWindowSize(ImVec2(350, 600), ImGuiCond_FirstUseEver);
-	imgui::Begin("Controls", NULL);
 
 	//////// Load File Frame ////////
 	static char filename[64];
@@ -412,7 +414,7 @@ void App::runImGui() {
 	int l = 0, k = 0;
 	color.resize(script.displays.size());
 	for (Script::DisplayFunction& dp : script.displays) {
-		imgui::SetNextTreeNodeOpen(true, ImGuiCond_Always);
+		imgui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
 		bool gui = imgui::TreeNode(dp.name.c_str());
 		FunctionRenderer* fr = nullptr;
 		for (auto& i : renderer) {
@@ -452,6 +454,37 @@ void App::runImGui() {
 
 	imgui::End();
 
+	//////////////////// Log Window ////////////////////
+	if (hasLog) {
+		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
+		imgui::Begin("Logs", NULL, ImGuiWindowFlags_MenuBar);
+
+		//////// Menu Bar ////////
+		static bool follow = true;
+		if (imgui::BeginMenuBar()) {
+			if (imgui::BeginMenu("Controls")) {
+				if (imgui::MenuItem("Clear"))
+					dlog.clearBuffer();
+				imgui::Separator();
+				imgui::MenuItem("Follow the end of log     ", NULL, &follow);
+				imgui::EndMenu();
+			}
+			imgui::EndMenuBar();
+		}
+
+		//////// Text Area ////////
+		imgui::BeginChild("DigitLogScroll", Vector2i(0, 0), true);
+		static float size;
+		for (const string& i : dlog.getBuffers())
+			imgui::Text((i + '\n').c_str());
+		if (size != imgui::GetScrollMaxY() && follow)
+			imgui::SetScrollY(imgui::GetScrollMaxY());
+		size = imgui::GetScrollMaxY();
+		imgui::EndChild();
+
+		imgui::End();
+	}
+
 }
 
 void App::loadScriptFile(string filename) {
@@ -463,22 +496,7 @@ void App::loadScriptFile(string filename) {
 	logicDataLock.lock();
 
 	script = s;
-	renderer.resize(script.displays.size());
-	for (int i = 0; i < script.displays.size(); i++) {
-		renderer[i].create(script.displays[i], script.displays[i].name);
-	}
-	//functionFrame->RemoveAll();
-	//functionFrame->Add(initFunctionList());
-	//mainWin->SetAllocation(FloatRect(mainWin->GetAllocation().left, mainWin->GetAllocation().top,
-	//	mainWin->GetRequisition().x, mainWin->GetRequisition().y));
-
-	funcCombo->Clear();
-	for (FunctionRenderer& i : renderer)
-		funcCombo->AppendItem(i.getName());
-	funcBox->RemoveAll();
-	FloatRect allocation = mainWin->GetAllocation();
-	Vector2f requisition = mainWin->GetRequisition();
-	mainWin->SetAllocation(FloatRect(allocation.left, allocation.top, requisition.x, requisition.y));
+	ResetFunctionRenderers();
 
 	logicDataLock.unlock();
 }
