@@ -75,7 +75,7 @@ typedef Vector2<double> Vector2d;
 typedef sf::Rect<Uint32> UintRect;
 
 //Constants
-const int majorVersion = 1, minorVersion = 0, releaseVersion = 0;
+const int majorVersion = 0, minorVersion = 3, releaseVersion = 0;
 const string projectCode = "Project Digit", projectSuffix = "Internal Release", releaseStage = "Beta";
 const string compileTime = string(__DATE__) + " " + string(__TIME__);
 
