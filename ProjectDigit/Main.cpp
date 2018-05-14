@@ -18,7 +18,7 @@
 
 using namespace std;
 
-void threadRendering(SFGUI& sfgui) {
+void threadRendering() {
 	static Clock imguiDeltaClock;
 	win.setActive(true);
 	while (isReady) {
@@ -34,7 +34,6 @@ void threadRendering(SFGUI& sfgui) {
 
 		logicDataLock.lock();
 		app->onRender(win);
-		sfgui.Display(win);
 		logicDataLock.unlock();
 
 		ImGui::SFML::Update(win, imguiDeltaClock.restart());
@@ -44,7 +43,6 @@ void threadRendering(SFGUI& sfgui) {
 		logicDataLock.lock();
 		win.setView(View(FloatRect(0, 0, win.getSize().x, win.getSize().y)));
 		ImGui::SFML::Render(win);
-		win.draw(text);
 		logicDataLock.unlock();
 
 		win.display();
@@ -56,7 +54,6 @@ void threadRendering(SFGUI& sfgui) {
 			framePerSecond = frameCounter;
 			frameCounter = 0;
 			win.setTitle(StringParser::toStringFormatted("%s | Async | TPS: %d, EPS: %d, FPS: %d", projectCode.c_str(), logicTickPerSecond, eventTickPerSecond, framePerSecond));
-			text.setString(StringParser::toStringFormatted("Async | TPS: %d, EPS: %d, FPS: %d", logicTickPerSecond, eventTickPerSecond, framePerSecond));
 		}
 		frameCounter++;
 	}
@@ -155,20 +152,8 @@ int main(int argc, char* argv[]) {
 	srand(time(NULL));
 	bool isFullscreen = false;
 
-	SFGUI sfgui;
-	//sfgui.AddCharacterSet(0x4E00, 0x9FA6);
-	//sf::Font fon;
-	//fon.loadFromFile("C:\\Windows\\Fonts\\msyh.ttc");
-	//Context::Get().GetEngine().GetResourceManager().SetDefaultFont(make_shared<sf::Font>(fon));
-	text.setFont(*Context::Get().GetEngine().GetResourceManager().GetFont(""));
-	text.setCharacterSize(14);
-
-	desktop = new Desktop();
-
 	app = new App();
-	app->initalaize(desktop);
-
-	desktop->Update(0.0f);
+	app->initalaize();
 
 #ifdef SFML_SYSTEM_WINDOWS
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)systemExitEventHandler, true);
@@ -185,12 +170,12 @@ int main(int argc, char* argv[]) {
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.FrameBorderSize = 1.0f;
 
-	app->initalaizePostWindow(win, desktop);
+	app->initalaizePostWindow(win);
 
 #ifdef USE_ASYNC_RENDERING
 	mlog << Log::Warning << "Async Rendering/Logic Update Enabled. Unstable. Aware." << dlog << Log::Info;
 	win.setActive(false);
-	thread render(threadRendering, ref(sfgui));
+	thread render(threadRendering);
 	thread logic(threadLogicUpdate, 60);
 #endif
 
@@ -213,9 +198,7 @@ int main(int argc, char* argv[]) {
 				continue;
 			}
 
-			desktop->HandleEvent(event);
 			app->handleEvent(win, event);
-			desktop->Update(desktopUpdate.restart().asSeconds());
 			logicDataLock.unlock();
 
 			if (event.type == Event::Closed) {

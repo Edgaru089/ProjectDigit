@@ -95,8 +95,8 @@ public:
 		fin.open(filename);
 		if (!fin.good()) {
 			mlog << "         File access failed." << dlog;
-			if (desktop != NULL)
-				sfMessageBox(*desktop, "[Script/EXCEPTION] ERROR: File \"" + filename + "\" access failed.", L"Error");
+			// TODO Show error message with imgui / File access failure
+//			sfMessageBox(*desktop, "[Script/EXCEPTION] ERROR: File \"" + filename + "\" access failed.", L"Error");
 			return false;
 		}
 
@@ -152,10 +152,10 @@ public:
 			mlog << Log::Error << "[Script/EXCEPTION] ERROR(" << (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
 				"Line %d", line
 				)) << "): " << e.what() << dlog;
-			if (desktop != NULL)
-				sfMessageBox(*desktop, "[Script/EXCEPTION] ERROR("s + (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
-					"Line %d"s, line
-				)) + "): "s + e.what(), L"Error");
+			// TODO Show error message with imgui / Known exception caught
+//			sfMessageBox(*desktop, "[Script/EXCEPTION] ERROR("s + (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
+//				"Line %d"s, line
+//			)) + "): "s + e.what(), L"Error");
 			script = _script;
 			return false;
 		}
@@ -163,10 +163,11 @@ public:
 			mlog << Log::Error << "[Script/EXCEPTION] UNKNOWN EXCEPTION(" << (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
 				"Line %d", line
 				)) << "): " << e.what() << dlog;
-			if (desktop != NULL)
-				sfMessageBox(*desktop, "[Script/EXCEPTION] UNKNOWN EXCEPTION("s + (line == -1 ? "Immediate"s : StringParser::toStringFormatted(
-					"Line %d"s, line
-				)) + "): "s + e.what(), L"Error");
+			// TODO Show error message with imgui / Unknown exception caught
+//			sfMessageBox(*desktop, "[Script/EXCEPTION] UNKNOWN EXCEPTION("s + (line == -1 ? "Immediate"s : 
+//				StringParser::toStringFormatted(
+//					"Line %d"s,
+//				line)) + "): "s + e.what(), L"Error");
 			script = _script;
 			return false;
 		}

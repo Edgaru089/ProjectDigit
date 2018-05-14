@@ -9,8 +9,9 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
 
-#include <SFGUI/SFGUI.hpp>
-#include <SFGUI/Widgets.hpp>
+#ifdef SFML_SYSTEM_WINDOWS
+#include <Windows.h>
+#endif
 
 #include "ImGui\imgui-setup.h"
 
@@ -18,47 +19,9 @@
 
 #define USING_NAMESPACE \
 using namespace std;\
-using namespace sfg;\
-\
-using sf::Vector2f;\
-using sf::Vector2i;\
-using sf::Vector2u;\
-using sf::RenderWindow;\
-using sf::VideoMode;\
-using sf::LineStrip;\
-using sf::Vector2;\
-using sf::Vertex;\
-using sf::VertexArray;\
-using sf::Event;\
-using sf::Color;\
-using sf::Clock;\
-using sf::Time;\
-using sf::microseconds;\
-using sf::milliseconds;\
-using sf::seconds;\
-using sf::ContextSettings;\
-using sf::FloatRect;\
-using sf::View;\
-using sf::Keyboard;\
-using sf::Ftp;\
-using sf::Http;\
-using sf::Socket;\
-using sf::TcpSocket;\
-using sf::UdpSocket;\
-using sf::IpAddress;\
-using sf::Packet;\
-using sf::Uint16;\
-using sf::Uint32;\
-using sf::Uint64;\
-using sf::String;\
-using sf::Mouse;\
-using sf::Keyboard;\
-using sf::Text;\
-using sf::Font
+using namespace sf
 
 USING_NAMESPACE;
-
-#define PTR ::Ptr
 
 #define USE_DEFAULT_WINMAIN_ENTRYPOINT
 //#define USE_DISCRETE_GPU
@@ -66,7 +29,7 @@ USING_NAMESPACE;
 #define OUTPUT_LOG_TO_STDOUT
 #define OUTPUT_LOG_TO_FILE
 #define LOG_FILENAME "latest.log"
-#define LOG_IGNORE_LEVEL -1
+#define LOG_IGNORE_LEVEL Log::Debug
 
 //Marcos & Typedefs
 #define var auto
@@ -97,10 +60,8 @@ int logicTickPerSecond, logicTickCounter, framePerSecond, frameCounter, eventTic
 Clock logicTickCounterClock, frameCounterClock, eventTickCounterClock;
 Clock programRunTimeClock;  //Nerer resets; started as time (for this process) begins
 atomic_bool isReady;
-Text text;
 
 Clock desktopUpdate;
-Desktop* desktop;
 
 //Utilities
 const double sqr(double x) { return x*x; }
@@ -146,8 +107,6 @@ void waitUntilEqual(const Type1& val, const Type2 equal) {
 #ifdef SFML_SYSTEM_WINDOWS
 
 #define USE_ASYNC_RENDERING
-
-#include <Windows.h>
 
 /*
 const string getEnvironmentVariable(string name) {
@@ -244,31 +203,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, INT) {
 #endif // USE_DEFAULT_WINMAIN_ENTRYPOINT
 
 #endif // SFML_SYSTEM_WINDOWS
-
-void sfMessageBox(Desktop& desktop, String content, String title = L"Infomation", function<void()> callOnClose = []() {}) {
-	Window::Ptr window = Window::Create(Window::TITLEBAR | Window::BACKGROUND | Window::SHADOW | Window::CLOSE);
-	Table::Ptr table = Table::Create();
-	Button::Ptr closeButton = Button::Create(L"Close");
-
-	window->SetTitle(title);
-	auto onClose = [window, &desktop, callOnClose]() {
-		window->Show(false);
-		desktop.Remove(window);
-		callOnClose();
-	};
-	window->GetSignal(Window::OnCloseButton).Connect(onClose);
-	closeButton->GetSignal(Button::OnLeftClick).Connect(onClose);
-	table->Attach(Label::Create(content), UintRect(0, 0, 3, 1));
-	table->Attach(closeButton, UintRect(1, 1, 1, 1));
-	table->SetRowSpacings(10);
-	window->Add(table);
-
-	int windowWidth = win.getSize().x, windowHeight = win.getSize().y;
-	window->SetPosition(Vector2f((windowWidth - window->GetRequisition().x) / 2,
-		(windowHeight - window->GetRequisition().y) / 2 - 100));
-
-	desktop.Add(window);
-}
 
 
 #include "FunctionAllocator.hpp"
