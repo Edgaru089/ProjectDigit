@@ -365,7 +365,7 @@ void App::runImGui() {
 	imgui::Begin("Controls", NULL, ImGuiWindowFlags_MenuBar);
 
 	//////// Menu Bar ////////
-	static bool hasLog = true, hasMetrics = false, hasDemo = false;
+	static bool hasLog = true, hasMetrics = false, hasDemo = false, setInputFocus = false;
 	static char imm[256];
 	if (imgui::BeginMenuBar()) {
 		if (imgui::BeginMenu("Main")) {
@@ -375,6 +375,11 @@ void App::runImGui() {
 			imgui::EndMenu();
 		}
 		if (imgui::BeginMenu("Immediate Input")) {
+			if (setInputFocus) {
+				imgui::SetKeyboardFocusHere();
+				setInputFocus = false;
+			}
+			imgui::PushItemWidth(400.0f);
 			if (imgui::InputText("Input", imm, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
 				thread([&]() {
 					logicDataLock.lock();
@@ -382,6 +387,7 @@ void App::runImGui() {
 					ResetFunctionRenderers();
 					memset(imm, 0, sizeof(imm));
 					logicDataLock.unlock();
+					setInputFocus = true;
 				}).detach();
 			}
 			imgui::EndMenu();
